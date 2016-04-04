@@ -1,0 +1,151 @@
+<session jtag_chain="USB-Blaster [USB-0]" jtag_device="@1: EP1C6 (0x020820DD)" sof_file="top.sof">
+  <display_tree gui_logging_enabled="0">
+    <display_branch instance="auto_signaltap_0" log="USE_GLOBAL_TEMP" signal_set="USE_GLOBAL_TEMP" trigger="USE_GLOBAL_TEMP"/>
+    <display_branch instance="auto_signaltap_1" log="USE_GLOBAL_TEMP" signal_set="USE_GLOBAL_TEMP" trigger="USE_GLOBAL_TEMP"/>
+  </display_tree>
+  <instance compilation_mode="incremental" entity_name="sld_signaltap" is_auto_node="yes" is_expanded="true" name="auto_signaltap_0" source_file="sld_signaltap.vhd">
+    <node_ip_info instance_id="0" mfg_id="110" node_id="0" version="3"/>
+    <signal_set global_temp="1" is_expanded="true" name="signal_set: 2005/05/23 13:12:01  #0">
+      <clock name="tinclk" polarity="posedge"/>
+      <config ram_type="M4K" reserved_data_nodes="0" reserved_trigger_nodes="0" sample_depth="512" trigger_in_enable="no" trigger_out_enable="no"/>
+      <top_entity/>
+      <signal_vec>
+        <trigger_input_vec>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[0]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[1]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[2]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[3]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[4]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[5]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[6]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[7]" tap_mode="probeonly" type="register"/>
+        </trigger_input_vec>
+        <data_input_vec>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[0]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[1]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[2]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[3]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[4]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[5]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[6]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[7]" tap_mode="probeonly" type="register"/>
+        </data_input_vec>
+      </signal_vec>
+      <presentation>
+        <data_view>
+          <bus is_signal_inverted="no" link="all" name="INSPI_BUF:SPI|outdata" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[7]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[6]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[5]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[4]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[3]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[2]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[1]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[0]"/>
+          </bus>
+        </data_view>
+        <setup_view>
+          <bus is_signal_inverted="no" link="all" name="INSPI_BUF:SPI|outdata" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[7]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[6]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[5]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[4]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[3]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[2]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[1]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[0]"/>
+          </bus>
+        </setup_view>
+      </presentation>
+      <trigger CRC="4B00EDFF" global_temp="1" is_expanded="true" name="trigger: 2005/05/23 13:12:01  #1" position="pre" segment_size="1" trigger_in="dont_care" trigger_out="active high" trigger_type="circular">
+        <events>
+          <level enabled="yes" type="basic">
+            <op_node/>
+          </level>
+        </events>
+        <data global_temp="1" name="log: 2005/05/23 13:21:40  #0"/>
+      </trigger>
+    </signal_set>
+    <position_info>
+      <single attribute="active tab" value="1"/>
+      <single attribute="setup horizontal scroll position" value="0"/>
+      <single attribute="setup vertical scroll position" value="1"/>
+    </position_info>
+  </instance>
+  <mnemonics/>
+  <instance compilation_mode="incremental" entity_name="sld_signaltap" is_auto_node="yes" is_expanded="true" name="auto_signaltap_1" source_file="sld_signaltap.vhd">
+    <node_ip_info instance_id="1" mfg_id="110" node_id="0" version="3"/>
+    <signal_set global_temp="1" is_expanded="true" name="signal_set: 2005/05/23 13:19:32  #0">
+      <clock name="tinclk" polarity="posedge"/>
+      <config ram_type="M4K" reserved_data_nodes="0" reserved_trigger_nodes="0" sample_depth="128" trigger_in_enable="no" trigger_out_enable="no"/>
+      <top_entity/>
+      <signal_vec>
+        <trigger_input_vec>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[0]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[1]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[2]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[3]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[4]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[5]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[6]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[7]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outrdy" tap_mode="probeonly" type="register"/>
+        </trigger_input_vec>
+        <data_input_vec>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[0]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[1]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[2]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[3]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[4]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[5]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[6]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outdata[7]" tap_mode="probeonly" type="register"/>
+          <wire connection_status="true" name="INSPI_BUF:SPI|outrdy" tap_mode="probeonly" type="register"/>
+        </data_input_vec>
+      </signal_vec>
+      <presentation>
+        <data_view>
+          <net is_signal_inverted="no" name="INSPI_BUF:SPI|outrdy"/>
+          <bus is_signal_inverted="no" link="all" name="INSPI_BUF:SPI|outdata" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[7]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[6]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[5]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[4]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[3]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[2]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[1]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[0]"/>
+          </bus>
+        </data_view>
+        <setup_view>
+          <net is_signal_inverted="no" name="INSPI_BUF:SPI|outrdy"/>
+          <bus is_signal_inverted="no" link="all" name="INSPI_BUF:SPI|outdata" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[7]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[6]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[5]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[4]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[3]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[2]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[1]"/>
+            <net is_signal_inverted="no" name="INSPI_BUF:SPI|outdata[0]"/>
+          </bus>
+        </setup_view>
+      </presentation>
+      <trigger CRC="500EDFF" global_temp="1" is_expanded="true" name="trigger: 2005/05/23 13:19:32  #1" position="pre" segment_size="1" trigger_in="dont_care" trigger_out="active high" trigger_type="circular">
+        <events>
+          <level enabled="yes" type="basic">
+            <op_node/>
+          </level>
+        </events>
+        <data global_temp="1" name="log: 2005/05/23 13:22:04  #0"/>
+      </trigger>
+    </signal_set>
+    <position_info>
+      <single attribute="active tab" value="1"/>
+    </position_info>
+  </instance>
+  <global_info>
+    <single attribute="active instance" value="1"/>
+    <multi attribute="window position" size="7" value="1073,665,398,124,356,50,124"/>
+  </global_info>
+</session>

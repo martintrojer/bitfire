@@ -1,0 +1,127 @@
+# Copyright (C) 1991-2005 Altera Corporation
+# Any  megafunction  design,  and related netlist (encrypted  or  decrypted),
+# support information,  device programming or simulation file,  and any other
+# associated  documentation or information  provided by  Altera  or a partner
+# under  Altera's   Megafunction   Partnership   Program  may  be  used  only
+# to program  PLD  devices (but not masked  PLD  devices) from  Altera.   Any
+# other  use  of such  megafunction  design,  netlist,  support  information,
+# device programming or simulation file,  or any other  related documentation
+# or information  is prohibited  for  any  other purpose,  including, but not
+# limited to  modification,  reverse engineering,  de-compiling, or use  with
+# any other  silicon devices,  unless such use is  explicitly  licensed under
+# a separate agreement with  Altera  or a megafunction partner.  Title to the
+# intellectual property,  including patents,  copyrights,  trademarks,  trade
+# secrets,  or maskworks,  embodied in any such megafunction design, netlist,
+# support  information,  device programming or simulation file,  or any other
+# related documentation or information provided by  Altera  or a megafunction
+# partner, remains with Altera, the megafunction partner, or their respective
+# licensors. No other licenses, including any licenses needed under any third
+# party's intellectual property, are provided herein.
+
+
+# The default values for assignments are stored in the file
+#		top_assignment_defaults.qdf
+# If this file doesn't exist, and for assignments not listed, see file
+#		assignment_defaults.qdf
+
+# Altera recommends that you do not modify this file. This
+# file is updated automatically by the Quartus II software
+# and any changes you make may be lost or overwritten.
+
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 4.2
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "11:49:47  FEBRUARY 09, 2005"
+set_global_assignment -name LAST_QUARTUS_VERSION "4.2 SP1"
+
+# Pin & Location Assignments
+# ==========================
+set_location_assignment PIN_93 -to cpu_spi_clk
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_spi_clk
+set_location_assignment PIN_98 -to cpu_miso
+set_location_assignment PIN_97 -to cpu_mosi
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to cpu_miso
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_mosi
+set_location_assignment PIN_16 -to main_clk
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to main_clk
+set_location_assignment PIN_73 -to d4_spi0
+set_location_assignment PIN_74 -to d3_spi0
+set_location_assignment PIN_75 -to d2_spi0
+set_location_assignment PIN_76 -to d1_spi0
+set_location_assignment PIN_77 -to d0_spi0
+set_location_assignment PIN_78 -to latchn_spi0
+set_location_assignment PIN_79 -to enablen_spi0
+set_location_assignment PIN_82 -to clk_spi0
+set_location_assignment PIN_99 -to d4_spi1
+set_location_assignment PIN_100 -to d3_spi1
+set_location_assignment PIN_103 -to d2_spi1
+set_location_assignment PIN_104 -to d1_spi1
+set_location_assignment PIN_105 -to d0_spi1
+set_location_assignment PIN_106 -to latchn_spi1
+set_location_assignment PIN_107 -to enablen_spi1
+set_location_assignment PIN_108 -to clk_spi1
+set_location_assignment PIN_61 -to en0_mux
+set_location_assignment PIN_62 -to en1_mux
+set_location_assignment PIN_67 -to en2_mux
+set_location_assignment PIN_68 -to en3_mux
+set_location_assignment PIN_69 -to en4_mux
+set_location_assignment PIN_70 -to en5_mux
+set_location_assignment PIN_71 -to en6_mux
+set_location_assignment PIN_72 -to en7_mux
+set_location_assignment PIN_84 -to dimmerpwm
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d4_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d3_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d2_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d1_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d0_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to latchn_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to enablen_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to clk_spi0
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d4_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d3_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d2_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d1_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to d0_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to latchn_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to enablen_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to clk_spi1
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en0_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en1_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en2_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en3_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en4_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en5_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en6_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to en7_mux
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to dimmerpwm
+set_location_assignment PIN_96 -to cpu_io0
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_io0
+set_location_assignment PIN_109 -to on_rsx
+set_location_assignment PIN_110 -to sel1_rsx
+set_location_assignment PIN_111 -to sel2_rsx
+set_location_assignment PIN_112 -to lbn_rsx
+set_location_assignment PIN_113 -to shdnn_muxsup
+set_location_assignment PIN_114 -to shdn_ledsup
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to on_rsx
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to sel1_rsx
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to sel2_rsx
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to lbn_rsx
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to shdnn_muxsup
+set_instance_assignment -name RESERVE_PIN "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL" -to shdn_ledsup
+set_location_assignment PIN_85 -to cpu_io1
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_io1
+set_location_assignment PIN_17 -to cpu_i2c_scl
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_i2c_scl
+set_location_assignment PIN_11 -to cpu_i2c_sda
+set_instance_assignment -name RESERVE_PIN "AS INPUT TRI-STATED" -to cpu_i2c_sda
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name FAMILY Cyclone
+set_global_assignment -name TOP_LEVEL_ENTITY top
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name DEVICE EP1C6T144C8
+set_instance_assignment -name IO_STANDARD LVTTL -to cpu_spi_clk

@@ -1,0 +1,244 @@
+# ====================================================================
+#
+#      lua.cdl
+#
+#      LUA configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 2003 Savin Zlobec 
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      savin 
+# Contributors:   
+# Date:           2003-07-19
+#
+#####DESCRIPTIONEND####
+# ====================================================================
+
+cdl_package CYGPKG_LUA {
+    display         "LUA programming language"
+    define_header   lua.h
+    include_dir     lua
+
+    requires        CYGPKG_ISOINFRA
+    requires        CYGPKG_MEMALLOC
+    requires        CYGPKG_LIBC_I18N
+    requires        CYGPKG_LIBC_SETJMP
+    requires        CYGPKG_LIBC_STDIO
+    requires        CYGPKG_LIBC_STDLIB
+    requires        CYGPKG_LIBC_STRING
+    requires        CYGPKG_ERROR
+    
+    # LUA core 
+    compile         lapi.c      \
+                    lcode.c     \
+                    ldebug.c    \
+                    ldo.c       \
+                    ldump.c     \
+                    lfunc.c     \
+                    lgc.c       \
+                    llex.c      \
+                    lmem.c      \
+                    lobject.c   \
+                    lopcodes.c  \
+                    lparser.c   \
+                    lstate.c    \
+                    lstring.c   \
+                    ltable.c    \
+                    ltm.c       \
+                    lundump.c   \
+                    lvm.c       \
+                    lzio.c      \
+                    lua-ecos.c 
+
+    # LUA lib
+    compile         lib/lauxlib.c   \
+                    lib/lbaselib.c  \
+                    lib/ldblib.c    \
+                    lib/ltablib.c   \
+                    lib/lstrlib.c   \
+                    lib/lbitfirelib.c 
+
+    cdl_option CYGIMP_LUA_NUMBER_TYPE {
+        display         "LUA number type"
+        flavor          data
+        legal_values    {"DOUBLE" "FLOAT" "LONG" "INT"}
+        default_value   {"INT"}
+        no_define
+        define          CYGIMP_LUA_NUMBER_TYPE
+        description     "
+            This option specifies the number type to be
+            used for representing numbers." 
+    }
+   
+    cdl_option CYGIMP_LUA_USE_FASTROUND {
+        display         "Pentium machine fast rounding method"
+        flavor          bool
+        default_value   0
+        active_if       { CYGPKG_HAL_SYNTH_I386 || CYGPKG_HAL_I386 }
+        description     "
+            When compiling on a Pentium machine, using a fast rounding
+            method for the conversion of doubles to ints can give around 
+            20% speed improvement."
+    }
+   
+    cdl_option CYGIMP_LUA_NOPARSER {
+        display         "Make LUA without parsing modules"
+        flavor          bool
+        default_value   0
+        description     "
+            Make LUA without the parsing modules (lcode, llex, lparser), 
+            which represent 35% of the total core. You'll only be able to 
+            load binary files and strings, precompiled with luac."
+    }
+    
+    cdl_component CYGBLD_LUA_BUILD_MATH_LIB {
+        display         "Build LUA math library"
+        flavor          bool
+        default_value   1
+        requires        CYGPKG_LIBM
+        compile         lib/lmathlib.c
+        description     "
+            This option controls the building of LUA math library."
+    
+        cdl_option CYGIMP_LUA_USE_DEGREES {
+            display         "Use degrees instead of radians"
+            flavor          bool
+            default_value   0
+            description     "
+                Enable this option if you want to use degrees instead of 
+                radians in the LUA math library."    
+        }
+    }
+    
+    cdl_option CYGBLD_LUA_BUILD_IO_LIB {
+        display         "Build LUA io library"
+        flavor          bool
+        default_value   1
+        requires        CYGPKG_LIBC_TIME
+        compile         lib/liolib.c
+        description     "
+            This option controls the building of LUA io library."
+    }
+
+    cdl_option CYGIMP_LUA_THREAD_SAFE {
+        display         "LUA thread safety"
+        flavor          bool
+        default_value   0 
+        description     "
+            This option controls whether LUA has support for thread 
+            safe operations."
+    }
+ 
+    cdl_component CYGBLD_LUA_THREAD_LIB {
+        display         "Build LUA multi threading library"
+        flavor          bool
+        default_value   0
+        requires        CYGIMP_LUA_THREAD_SAFE
+        compile         lib/lthreadlib.c
+        description     "
+            This option controls the building of LUA multi threading
+            library. It enables the creation of LUA threads wich run
+            on top of eCos threads and thus enabling LUA to take advantage
+            of eCos multi threading. Synchronization primitives mutex and
+            condition are also available."
+
+        cdl_option CYGNUM_LUA_THREAD_STACK_SIZE {
+            display         "Stack size of eCos threads running LUA threads code"
+            flavor          data
+            default_value   8192
+            legal_values    1024 to 1048576
+            description     "
+                This option controls the stack size of eCos threads
+                used to run LUA threads code."
+        }
+ 
+        cdl_option CYGIMP_LUA_THREAD_TRUE_PREEMPT {
+            display         "Enables the preemption of any LUA code"
+            flavor          bool
+            default_value   0
+            description     "
+                Not all LUA code can be preempted - code like 
+                'while 1 do end' can't. This option enables a
+                mechanism to preempt all kinds of code, but adds
+                some overhead (see src/lua-ecos.c)."
+        }
+
+        cdl_option CYGNUM_LUA_THREAD_TICK {
+            display         "Time in wich any LUA code will be preempted"
+            flavor          data
+            default_value   20
+            legal_values    1 to 999999
+            active_if       CYGIMP_LUA_THREAD_TRUE_PREEMPT
+            description     "
+                This option controls the time in eCos tick units in
+                wich any LUA code will be preempted. Smaller the value,
+                bigger the overhead." 
+        }
+    }
+    
+    cdl_option CYGPKG_LUA_CFLAGS_ADD {
+        display "Additional compiler flags"
+        flavor  data
+        no_define
+        default_value { "-I$(PREFIX)/include/lua -D__ECOS" }
+        description   "
+            This option modifies the set of compiler flags for
+            building this package. These flags are used in addition
+            to the set of global flags."
+    }
+
+    cdl_option CYGPKG_LUA_CFLAGS_REMOVE {
+        display "Suppressed compiler flags"
+        flavor  data
+        no_define
+        default_value { "" }
+        description   "
+            This option modifies the set of compiler flags for
+            building this package. These flags are removed from
+            the set of global flags if present."
+    }
+
+    cdl_option  CYGPKG_LUA_TESTS {
+        display         "Lua tests"
+        flavor          data
+        no_define
+        calculated      { " tests/lua_tests.c tests/lua_life.c " .
+                          (CYGBLD_LUA_THREAD_LIB ? "tests/lua_threads.c" : "") }
+        description     "
+            This option specifies the set of tests for the LUA package."
+    }
+}
+
+# ====================================================================
+# End of lua.cdl

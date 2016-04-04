@@ -1,0 +1,66 @@
+# Makefile
+# mtrojer@arrownordic.com
+# $WCREV$
+
+TOOLDIR=/cygdrive/c/Bitfire/GNUARM
+#CC=$(TOOLDIR)/bin/arm-elf-gcc
+#LD=$(TOOLDIR)/bin/arm-elf-ld
+#AR=$(TOOLDIR)/bin/arm-elf-ar
+
+CC=arm-elf-gcc
+LD=arm-elf-ld
+AR=arm-elf-ar
+
+CC_FLAGS = -mcpu=arm7tdmi -O2 -W
+CC_INC = -I../inc -I../../../inc
+
+TARGET = libbitfirebsp.a
+OBJS = bitfire_fpga.o lpc2129_spi_polled.o lpc2129_uart_polled.o lpc2129_uart_int.o lpc2129_vic.o lpc2129_can_polled.o
+GOBJS = bitfire_gfx00.o bitfire_gfx01.o bitfire_gfx02.o bitfire_gfx10.o bitfire_gfx11.o bitfire_gfx12.o bitfire_gfx20.o bitfire_gfx21.o bitfire_gfx22.o
+
+MSRC = $(OBJS:.o=.c)
+SRC = $(MSRC:%=../src/%)
+
+$(TARGET): $(OBJS) $(GOBJS)
+	$(AR) -r $(TARGET) $(OBJS)
+	$(AR) -r libbitfirebsp00.a $(OBJS) bitfire_gfx00.o
+	$(AR) -r libbitfirebsp01.a $(OBJS) bitfire_gfx01.o
+	$(AR) -r libbitfirebsp02.a $(OBJS) bitfire_gfx02.o
+	$(AR) -r libbitfirebsp10.a $(OBJS) bitfire_gfx10.o
+	$(AR) -r libbitfirebsp11.a $(OBJS) bitfire_gfx11.o
+	$(AR) -r libbitfirebsp12.a $(OBJS) bitfire_gfx12.o
+	$(AR) -r libbitfirebsp20.a $(OBJS) bitfire_gfx20.o
+	$(AR) -r libbitfirebsp21.a $(OBJS) bitfire_gfx21.o
+	$(AR) -r libbitfirebsp22.a $(OBJS) bitfire_gfx22.o
+
+bitfire_gfx00.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx00.o -c $(CC_FLAGS) -DME_X=0 -DME_Y=0 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx01.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx01.o -c $(CC_FLAGS) -DME_X=0 -DME_Y=1 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx02.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx02.o -c $(CC_FLAGS) -DME_X=0 -DME_Y=2 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx10.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx10.o -c $(CC_FLAGS) -DME_X=1 -DME_Y=0 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx11.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx11.o -c $(CC_FLAGS) -DME_X=1 -DME_Y=1 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx12.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx12.o -c $(CC_FLAGS) -DME_X=1 -DME_Y=2 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx20.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx20.o -c $(CC_FLAGS) -DME_X=2 -DME_Y=0 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx21.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx21.o -c $(CC_FLAGS) -DME_X=2 -DME_Y=1 $(CC_INC) ../src/bitfire_gfx.c
+
+bitfire_gfx22.o: ../src/bitfire_gfx.c
+	$(CC) -o bitfire_gfx22.o -c $(CC_FLAGS) -DME_X=2 -DME_Y=2 $(CC_INC) ../src/bitfire_gfx.c
+
+$(OBJS): $(SRC)
+	$(CC) -c $(CC_FLAGS) $(CC_INC) ../src/$*.c
+clean:
+	rm -f $(TARGET) $(OBJS) $(GOBJS) *.a

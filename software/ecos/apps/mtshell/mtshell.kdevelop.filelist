@@ -1,0 +1,18 @@
+# KDevelop Custom Project File List
+Makefile
+mtshell.c
+base_funcs.c
+base_funcs.h
+lua_funcs.c
+lua_funcs.h
+ps_func.h
+ps_func.c
+mtshell.h
+crc16.c
+crc16.h
+mtshell_thread.c
+mtshell_thread.h
+thread_cleanup.c
+thread_cleanup.h
+xmodem.c
+xmodem.h

@@ -1,0 +1,189 @@
+# Copyright (C) 1991-2005 Altera Corporation
+# Your use of Altera Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic       
+# functions, and any output files any of the foregoing           
+# (including device programming or simulation files), and any    
+# associated documentation or information are expressly subject  
+# to the terms and conditions of the Altera Program License      
+# Subscription Agreement, Altera MegaCore Function License       
+# Agreement, or other applicable license agreement, including,   
+# without limitation, that your use is for the sole purpose of   
+# programming logic devices manufactured by Altera and sold by   
+# Altera or its authorized distributors.  Please refer to the    
+# applicable agreement for further details.
+
+
+# The default values for assignments are stored in the file
+#		cpuledctrl_top_assignment_defaults.qdf
+# If this file doesn't exist, and for assignments not listed, see file
+#		assignment_defaults.qdf
+
+# Altera recommends that you do not modify this file. This
+# file is updated automatically by the Quartus II software
+# and any changes you make may be lost or overwritten.
+
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name INCREMENTAL_COMPILATION OFF
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "4.2 SP1"
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:24:16  MAY 02, 2005"
+set_global_assignment -name LAST_QUARTUS_VERSION 7.0
+set_global_assignment -name VHDL_FILE ../../src/mypll.vhd
+set_global_assignment -name VHDL_FILE ../../src/mymem.vhd
+set_global_assignment -name VHDL_FILE ../../src/simplepwm.vhd
+set_global_assignment -name VHDL_FILE ../../src/cpuctrl.vhd
+set_global_assignment -name VHDL_FILE ../../src/cpuledctrl_top.vhd
+set_global_assignment -name VHDL_FILE ../../src/inspi_buf.vhd
+set_global_assignment -name VHDL_FILE ../../src/ledctrl.vhd
+set_global_assignment -name VHDL_FILE ../../src/outspi_bot.vhd
+set_global_assignment -name VHDL_FILE ../../src/outspi_top.vhd
+
+# Pin & Location Assignments
+# ==========================
+set_location_assignment PIN_16 -to clock
+set_location_assignment PIN_82 -to outclk00
+set_location_assignment PIN_108 -to outclk11
+set_location_assignment PIN_77 -to outdata00
+set_location_assignment PIN_76 -to outdata01
+set_location_assignment PIN_75 -to outdata02
+set_location_assignment PIN_74 -to outdata03
+set_location_assignment PIN_73 -to outdata04
+set_location_assignment PIN_105 -to outdata10
+set_location_assignment PIN_104 -to outdata11
+set_location_assignment PIN_103 -to outdata12
+set_location_assignment PIN_100 -to outdata13
+set_location_assignment PIN_99 -to outdata14
+set_location_assignment PIN_79 -to pspi0_enablen
+set_location_assignment PIN_78 -to pspi0_latchn
+set_location_assignment PIN_107 -to pspi1_enablen
+set_location_assignment PIN_106 -to pspi1_latchn
+set_location_assignment PIN_61 -to pen_mux[0]
+set_location_assignment PIN_62 -to pen_mux[1]
+set_location_assignment PIN_67 -to pen_mux[2]
+set_location_assignment PIN_68 -to pen_mux[3]
+set_location_assignment PIN_69 -to pen_mux[4]
+set_location_assignment PIN_70 -to pen_mux[5]
+set_location_assignment PIN_71 -to pen_mux[6]
+set_location_assignment PIN_72 -to pen_mux[7]
+set_location_assignment PIN_122 -to outclk01 -disable
+set_location_assignment PIN_123 -to outclk02 -disable
+set_location_assignment PIN_124 -to outclk03 -disable
+set_location_assignment PIN_125 -to outclk04 -disable
+set_location_assignment PIN_128 -to outclk10 -disable
+set_location_assignment PIN_129 -to outclk12 -disable
+set_location_assignment PIN_130 -to outclk13 -disable
+set_location_assignment PIN_131 -to outclk14 -disable
+set_location_assignment PIN_84 -to tpwm
+set_location_assignment PIN_114 -to shutled
+set_location_assignment PIN_85 -to tcsel
+set_location_assignment PIN_93 -to tspiclk
+set_location_assignment PIN_97 -to tspidata
+set_location_assignment PIN_96 -to tsync
+set_location_assignment PIN_110 -to lb_rsx
+set_location_assignment PIN_109 -to on_rsx
+set_location_assignment PIN_111 -to sel1_rsx
+set_location_assignment PIN_112 -to sel2_rsx
+set_location_assignment PIN_113 -to shutmuxn
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name FAMILY Cyclone
+set_global_assignment -name TOP_LEVEL_ENTITY cpuledctrl_top
+set_global_assignment -name AUTO_ENABLE_SMART_COMPILE off
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name DEVICE EP1C6T144C6
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name RESERVE_ASDO_AFTER_CONFIGURATION "AS OUTPUT DRIVING AN UNSPECIFIED SIGNAL"
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+
+# Assembler Assignments
+# =====================
+set_global_assignment -name CYCLONE_CONFIGURATION_DEVICE EPCS1
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
+
+# SignalTap II Assignments
+# ========================
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+
+# ---------------------
+# start CLOCK(spiclock)
+
+	# Timing Assignments
+	# ==================
+	set_global_assignment -name FMAX_REQUIREMENT "10.0 MHz" -section_id spiclock
+
+# end CLOCK(spiclock)
+# -------------------
+
+# ----------------------------
+# start ENTITY(cpuledctrl_top)
+
+	# Pin & Location Assignments
+	# ==========================
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk01
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk02
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk03
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk04
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk10
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk12
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk13
+	set_instance_assignment -name VIRTUAL_PIN ON -to outclk14
+
+	# Timing Assignments
+	# ==================
+	set_instance_assignment -name CLOCK_SETTINGS spiclock -to tspiclk
+
+	# Fitter Assignments
+	# ==================
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to lb_rsx
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to on_rsx
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outclk00
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata00
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata01
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata02
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata03
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata04
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata10
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata11
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata12
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata13
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outdata14
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to outclk11
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[0]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[1]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[2]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[3]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[4]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[5]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[6]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pen_mux[7]
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pspi0_enablen
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pspi0_latchn
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pspi1_enablen
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to pspi1_latchn
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to sel1_rsx
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to sel2_rsx
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to shutled
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to shutmuxn
+	set_instance_assignment -name SLOW_SLEW_RATE ON -to tpwm
+
+	# ---------------------------
+	# start DESIGN_PARTITION(Top)
+
+		# Incremental Compilation Assignments
+		# ===================================
+		set_instance_assignment -name PARTITION_HIERARCHY no_file_for_top_partition -to | -section_id Top
+		set_global_assignment -name PARTITION_NETLIST_TYPE POST_SYNTH -section_id Top
+
+	# end DESIGN_PARTITION(Top)
+	# -------------------------
+
+# end ENTITY(cpuledctrl_top)
+# --------------------------
+
+set_global_assignment -name SMART_RECOMPILE ON
+set_global_assignment -name SIGNALTAP_FILE stp1.stp
+set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp

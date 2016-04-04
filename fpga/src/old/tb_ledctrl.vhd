@@ -1,0 +1,299 @@
+-- LED CTRL Testbench
+-- mtrojer@arrownordic.com
+-- $WCREV$
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+
+entity testbench is end;
+
+architecture testbench of testbench is
+
+  component altmem
+    PORT
+      (
+        data    : IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+        wren    : IN STD_LOGIC  := '1';
+        wraddress       : IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+        rdaddress       : IN STD_LOGIC_VECTOR (6 DOWNTO 0);
+        wrclock         : IN STD_LOGIC ;
+        rdclock         : IN STD_LOGIC ;
+        q       : OUT STD_LOGIC_VECTOR (127 DOWNTO 0)
+	);
+  end component;
+
+  component LEDCTRL
+      port( clk, rst     : in std_logic;
+
+        -- mem interface
+        rdaddr       : out std_logic_vector(6 downto 0);
+        q            : in std_logic_vector(127 downto 0);
+
+        -- led control
+        spi0_latchn  : out std_logic;
+        spi0_enablen : out std_logic;
+        spi1_latchn  : out std_logic;
+        spi1_enablen : out std_logic;
+        en_mux       : out std_logic_vector(7 downto 0);
+
+        -- spi interfaces
+        spi00_ready   : in std_logic;
+        spi00_data    : out std_logic_vector(15 downto 0);
+        spi00_datardy : out std_logic;
+        spi01_ready   : in std_logic;
+        spi01_data    : out std_logic_vector(15 downto 0);
+        spi01_datardy : out std_logic;
+        spi02_ready   : in std_logic;
+        spi02_data    : out std_logic_vector(15 downto 0);
+        spi02_datardy : out std_logic;
+        spi03_ready   : in std_logic;
+        spi03_data    : out std_logic_vector(15 downto 0);
+        spi03_datardy : out std_logic;
+        spi04_ready   : in std_logic;
+        spi04_data    : out std_logic_vector(15 downto 0);
+        spi04_datardy : out std_logic;
+
+        spi10_ready   : in std_logic;
+        spi10_data    : out std_logic_vector(15 downto 0);
+        spi10_datardy : out std_logic;
+        spi11_ready   : in std_logic;
+        spi11_data    : out std_logic_vector(15 downto 0);
+        spi11_datardy : out std_logic;
+        spi12_ready   : in std_logic;
+        spi12_data    : out std_logic_vector(15 downto 0);
+        spi12_datardy : out std_logic;
+        spi13_ready   : in std_logic;
+        spi13_data    : out std_logic_vector(15 downto 0);
+        spi13_datardy : out std_logic;
+        spi14_ready   : in std_logic;
+        spi14_data    : out std_logic_vector(15 downto 0);
+        spi14_datardy : out std_logic);  
+  end component;
+        
+  component OUTSPI_TOP
+    port( clk, rst: in std_logic;        
+          indata: in std_logic_vector(15 downto 0);
+          inrdy: in std_logic;
+          outdata,outclk: out std_logic;
+          rdy : out std_logic);
+  end component;
+
+  component OUTSPI_BOT
+    port( clk, rst: in std_logic;        
+          indata: in std_logic_vector(15 downto 0);
+          inrdy: in std_logic;
+          outdata,outclk: out std_logic;
+          rdy : out std_logic);
+  end component;
+
+  signal clock : std_logic := '0';
+  signal spiclock : std_logic := '0';
+  signal reset : std_logic := '1';
+
+  signal MEM_IN_DATA   : std_logic_vector(7 downto 0) := "00000000";
+  signal MEM_IN_WREN   : std_logic := '0';
+  signal MEM_IN_WRADDR : std_logic_vector(10 downto 0) := "00000000000";
+  signal MEM_IN_RDADDR : std_logic_vector(6 downto 0) := "0000000";
+  signal MEM_OUT_Q     : std_logic_vector(127 downto 0);
+  
+  signal SPI0_OUT_LATCHN : std_logic := '0';
+  signal SPI0_OUT_ENABLEN : std_logic := '0';
+  signal SPI1_OUT_LATCHN : std_logic := '0';
+  signal SPI1_OUT_ENABLEN : std_logic := '0';
+  signal EN_OUT_MUX : std_logic_vector(7 downto 0) := "00000000";
+
+  signal SPI00_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI00_IN_DATARDY : std_logic := '0';
+  signal SPI00_OUT_DATA : std_logic := '0';
+  signal SPI00_OUT_CLK : std_logic := '0';
+  signal SPI00_OUT_RDY : std_logic := '0';
+  signal SPI01_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI01_IN_DATARDY : std_logic := '0';
+  signal SPI01_OUT_DATA : std_logic := '0';
+  signal SPI01_OUT_CLK : std_logic := '0';
+  signal SPI01_OUT_RDY : std_logic := '0';
+  signal SPI02_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI02_IN_DATARDY : std_logic := '0';
+  signal SPI02_OUT_DATA : std_logic := '0';
+  signal SPI02_OUT_CLK : std_logic := '0';
+  signal SPI02_OUT_RDY : std_logic := '0';
+  signal SPI03_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI03_IN_DATARDY : std_logic := '0';
+  signal SPI03_OUT_DATA : std_logic := '0';
+  signal SPI03_OUT_CLK : std_logic := '0';
+  signal SPI03_OUT_RDY : std_logic := '0';
+  signal SPI04_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI04_IN_DATARDY : std_logic := '0';
+  signal SPI04_OUT_DATA : std_logic := '0';
+  signal SPI04_OUT_CLK : std_logic := '0';
+  signal SPI04_OUT_RDY : std_logic := '0';
+
+  signal SPI10_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI10_IN_DATARDY : std_logic := '0';
+  signal SPI10_OUT_DATA : std_logic := '0';
+  signal SPI10_OUT_CLK : std_logic := '0';
+  signal SPI10_OUT_RDY : std_logic := '0';
+  signal SPI11_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI11_IN_DATARDY : std_logic := '0';
+  signal SPI11_OUT_DATA : std_logic := '0';
+  signal SPI11_OUT_CLK : std_logic := '0';
+  signal SPI11_OUT_RDY : std_logic := '0';
+  signal SPI12_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI12_IN_DATARDY : std_logic := '0';
+  signal SPI12_OUT_DATA : std_logic := '0';
+  signal SPI12_OUT_CLK : std_logic := '0';
+  signal SPI12_OUT_RDY : std_logic := '0';
+  signal SPI13_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI13_IN_DATARDY : std_logic := '0';
+  signal SPI13_OUT_DATA : std_logic := '0';
+  signal SPI13_OUT_CLK : std_logic := '0';
+  signal SPI13_OUT_RDY : std_logic := '0';
+  signal SPI14_IN_DATA : std_logic_vector(15 downto 0) := "0000000000000000";
+  signal SPI14_IN_DATARDY : std_logic := '0';
+  signal SPI14_OUT_DATA : std_logic := '0';
+  signal SPI14_OUT_CLK : std_logic := '0';
+  signal SPI14_OUT_RDY : std_logic := '0';
+  
+begin
+  MEM: altmem port map(data=>MEM_IN_DATA,
+                       wren=>MEM_IN_WREN,
+                       wraddress=>MEM_IN_WRADDR,
+                       rdaddress=>MEM_IN_RDADDR,
+                       wrclock=>clock,
+                       rdclock=>clock,
+                       q=>MEM_OUT_Q);
+
+  LC : LEDCTRL port map(clk=>clock,
+                        rst=>reset,
+                        rdaddr=>MEM_IN_RDADDR,
+                        q=>MEM_OUT_Q,
+
+                        spi0_latchn=>SPI0_OUT_LATCHN,
+                        spi0_enablen=>SPI0_OUT_ENABLEN,
+                        spi1_latchn=>SPI1_OUT_LATCHN,
+                        spi1_enablen=>SPI1_OUT_ENABLEN,
+                        en_mux=>EN_OUT_MUX,
+                                                
+                        spi00_ready=>SPI00_OUT_RDY,
+                        spi00_data=>SPI00_IN_DATA,
+                        spi00_datardy=>SPI00_IN_DATARDY,
+                        spi01_ready=>SPI01_OUT_RDY,
+                        spi01_data=>SPI01_IN_DATA,
+                        spi01_datardy=>SPI01_IN_DATARDY,
+                        spi02_ready=>SPI02_OUT_RDY,
+                        spi02_data=>SPI02_IN_DATA,
+                        spi02_datardy=>SPI02_IN_DATARDY,
+                        spi03_ready=>SPI03_OUT_RDY,
+                        spi03_data=>SPI03_IN_DATA,
+                        spi03_datardy=>SPI03_IN_DATARDY,
+                        spi04_ready=>SPI04_OUT_RDY,
+                        spi04_data=>SPI04_IN_DATA,
+                        spi04_datardy=>SPI04_IN_DATARDY,
+
+                        spi10_ready=>SPI10_OUT_RDY,
+                        spi10_data=>SPI10_IN_DATA,
+                        spi10_datardy=>SPI10_IN_DATARDY,
+                        spi11_ready=>SPI11_OUT_RDY,
+                        spi11_data=>SPI11_IN_DATA,
+                        spi11_datardy=>SPI11_IN_DATARDY,
+                        spi12_ready=>SPI12_OUT_RDY,
+                        spi12_data=>SPI12_IN_DATA,
+                        spi12_datardy=>SPI12_IN_DATARDY,
+                        spi13_ready=>SPI13_OUT_RDY,
+                        spi13_data=>SPI13_IN_DATA,
+                        spi13_datardy=>SPI13_IN_DATARDY,
+                        spi14_ready=>SPI14_OUT_RDY,
+                        spi14_data=>SPI14_IN_DATA,
+                        spi14_datardy=>SPI14_IN_DATARDY);
+                        
+  S0: OUTSPI_TOP port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI00_IN_DATA,
+                      inrdy=>SPI00_IN_DATARDY,
+                      outdata=>SPI00_OUT_DATA,
+                      outclk=>SPI00_OUT_CLK,
+                      rdy=>SPI00_OUT_RDY);
+
+  S1: OUTSPI_TOP port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI01_IN_DATA,
+                      inrdy=>SPI01_IN_DATARDY,
+                      outdata=>SPI01_OUT_DATA,
+                      outclk=>SPI01_OUT_CLK,
+                      rdy=>SPI01_OUT_RDY);
+
+  S2: OUTSPI_TOP port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI02_IN_DATA,
+                      inrdy=>SPI02_IN_DATARDY,
+                      outdata=>SPI02_OUT_DATA,
+                      outclk=>SPI02_OUT_CLK,
+                      rdy=>SPI02_OUT_RDY);
+
+  S3: OUTSPI_TOP port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI03_IN_DATA,
+                      inrdy=>SPI03_IN_DATARDY,
+                      outdata=>SPI03_OUT_DATA,
+                      outclk=>SPI03_OUT_CLK,
+                      rdy=>SPI03_OUT_RDY);
+
+  S4: OUTSPI_TOP port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI04_IN_DATA,
+                      inrdy=>SPI04_IN_DATARDY,
+                      outdata=>SPI04_OUT_DATA,
+                      outclk=>SPI04_OUT_CLK,
+                      rdy=>SPI04_OUT_RDY);
+
+  S5: OUTSPI_BOT port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI10_IN_DATA,
+                      inrdy=>SPI10_IN_DATARDY,
+                      outdata=>SPI10_OUT_DATA,
+                      outclk=>SPI10_OUT_CLK,
+                      rdy=>SPI10_OUT_RDY);
+
+  S6: OUTSPI_BOT port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI11_IN_DATA,
+                      inrdy=>SPI11_IN_DATARDY,
+                      outdata=>SPI11_OUT_DATA,
+                      outclk=>SPI11_OUT_CLK,
+                      rdy=>SPI11_OUT_RDY);
+
+  S7: OUTSPI_BOT port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI12_IN_DATA,
+                      inrdy=>SPI12_IN_DATARDY,
+                      outdata=>SPI12_OUT_DATA,
+                      outclk=>SPI12_OUT_CLK,
+                      rdy=>SPI12_OUT_RDY);
+
+  S8: OUTSPI_BOT port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI13_IN_DATA,
+                      inrdy=>SPI13_IN_DATARDY,
+                      outdata=>SPI13_OUT_DATA,
+                      outclk=>SPI13_OUT_CLK,
+                      rdy=>SPI13_OUT_RDY);
+
+  S9: OUTSPI_BOT port map(clk=>spiclock,
+                      rst=>reset,
+                      indata=>SPI14_IN_DATA,
+                      inrdy=>SPI14_IN_DATARDY,
+                      outdata=>SPI14_OUT_DATA,
+                      outclk=>SPI14_OUT_CLK,
+                      rdy=>SPI14_OUT_RDY);
+  
+  clock <= not(clock) after 25 ns;      -- 20 Mhz
+  spiclock <= not(spiclock) after 5 ns;    -- 100 Mhz
+
+  process
+  begin
+    wait until clock='1';
+    reset<='0';
+  end process;
+end;
+  

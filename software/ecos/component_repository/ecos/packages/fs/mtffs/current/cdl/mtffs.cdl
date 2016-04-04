@@ -1,0 +1,116 @@
+# ====================================================================
+#
+#      mtffs.cdl
+#
+#      mtffs Filesystem configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+## Copyright (C) 2004 eCosCentric Limited
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Martin Trojer(martin.trojer@gmail.com)
+# Contributors:
+# Date:           2007-05-04
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_FS_MTFFS {
+    display        "MTFFS Filesystem"
+    doc            ref/fileio.html
+    include_dir    ""
+
+    requires       CYGPKG_IO_FILEIO
+#    requires       CYGPKG_IO_FLASH
+#    requires       CYGINT_ISO_MALLOC
+
+    requires       CYGPKG_ISOINFRA
+    requires       CYGPKG_ERROR
+    requires       CYGINT_ISO_ERRNO
+    requires       CYGINT_ISO_ERRNO_CODES
+#    requires       CYGPKG_IO_FLASH_BLOCK_DEVICE
+
+    implements     CYGINT_IO_FILEIO_FS      
+
+    compile        -library=libextras.a mtffs.c
+
+    cdl_option CYGOPT_FS_MTFFS_USE_RAM_FLASH {
+	display         "Use a RAM emulated flash device"
+	flavor          bool
+	default_value   1
+    compile        -library=libextras.a flash.c
+        description     "
+		Make MTFFS use a RAM emulated Flash device, bypassing the IO_FLASH system"
+	}
+    
+	cdl_option CYGOPT_FS_MTFFS_USE_IO_FLASH {
+	display         "Use IO_FLASH system for interfacing to device"
+	flavor          bool
+	default_value   0
+        description     "
+		Make MTFFS use eCos IO_FLASH system for device interfacing (broken for NAND)"
+	}
+
+	cdl_option CYGOPT_FS_MTFFS_USE_M25PXX_FLASH {
+	display         "Use M25PXX flash device driver"
+	flavor          bool
+	default_value   0
+        description     "
+		Make MTFFS use the M25PXX flash device driver, bypassing the IO_FLASH system"
+}
+
+    # ----------------------------------------------------------------
+    # Tests
+#
+#    cdl_option CYGPKG_FS_MTFFS_TESTS {
+#	display "mtffs FS tests"
+#	flavor  data
+#	no_define
+#	calculated { "tests/mtffs_1 tests/mtffs_2 tests/mtffs_3" }
+#            description   "
+#                This option specifies the set of tests for the mtffs    
+#                FS package."
+#        }
+    
+}
+
+# End of mtffs.cdl
+
+
+
+
+

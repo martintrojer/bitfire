@@ -1,0 +1,147 @@
+# Copyright (C) 1991-2005 Altera Corporation
+# Any  megafunction  design,  and related netlist (encrypted  or  decrypted),
+# support information,  device programming or simulation file,  and any other
+# associated  documentation or information  provided by  Altera  or a partner
+# under  Altera's   Megafunction   Partnership   Program  may  be  used  only
+# to program  PLD  devices (but not masked  PLD  devices) from  Altera.   Any
+# other  use  of such  megafunction  design,  netlist,  support  information,
+# device programming or simulation file,  or any other  related documentation
+# or information  is prohibited  for  any  other purpose,  including, but not
+# limited to  modification,  reverse engineering,  de-compiling, or use  with
+# any other  silicon devices,  unless such use is  explicitly  licensed under
+# a separate agreement with  Altera  or a megafunction partner.  Title to the
+# intellectual property,  including patents,  copyrights,  trademarks,  trade
+# secrets,  or maskworks,  embodied in any such megafunction design, netlist,
+# support  information,  device programming or simulation file,  or any other
+# related documentation or information provided by  Altera  or a megafunction
+# partner, remains with Altera, the megafunction partner, or their respective
+# licensors. No other licenses, including any licenses needed under any third
+# party's intellectual property, are provided herein.
+
+
+# The default values for assignments are stored in the file
+#		top_assignment_defaults.qdf
+# If this file doesn't exist, and for assignments not listed, see file
+#		assignment_defaults.qdf
+
+# Altera recommends that you do not modify this file. This
+# file is updated automatically by the Quartus II software
+# and any changes you make may be lost or overwritten.
+
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name ENABLE_INCREMENTAL_SYNTHESIS ON
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 4.2
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "09:45:09  FEBRUARY 03, 2005"
+set_global_assignment -name LAST_QUARTUS_VERSION "4.2 SP1"
+set_global_assignment -name VHDL_FILE ../../vhdl_source/alt_pll.vhd
+set_global_assignment -name VHDL_FILE ../../vhdl_source/simplepwm.vhd
+set_global_assignment -name VHDL_FILE ../../vhdl_source/outspi.vhd
+set_global_assignment -name VHDL_FILE ../../vhdl_source/altmem.vhd
+set_global_assignment -name VHDL_FILE ../../vhdl_source/ledctrl.vhd
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name VECTOR_WAVEFORM_FILE top.vwf
+
+# Pin & Location Assignments
+# ==========================
+set_location_assignment PIN_16 -to clock
+set_location_assignment PIN_82 -to outclk00
+set_location_assignment PIN_108 -to outclk11
+set_location_assignment PIN_77 -to outdata00
+set_location_assignment PIN_76 -to outdata01
+set_location_assignment PIN_75 -to outdata02
+set_location_assignment PIN_74 -to outdata03
+set_location_assignment PIN_73 -to outdata04
+set_location_assignment PIN_105 -to outdata10
+set_location_assignment PIN_104 -to outdata11
+set_location_assignment PIN_103 -to outdata12
+set_location_assignment PIN_100 -to outdata13
+set_location_assignment PIN_99 -to outdata14
+set_location_assignment PIN_79 -to pspi0_enablen
+set_location_assignment PIN_78 -to pspi0_latchn
+set_location_assignment PIN_107 -to pspi1_enablen
+set_location_assignment PIN_106 -to pspi1_latchn
+set_location_assignment PIN_61 -to pen_mux[0]
+set_location_assignment PIN_62 -to pen_mux[1]
+set_location_assignment PIN_67 -to pen_mux[2]
+set_location_assignment PIN_68 -to pen_mux[3]
+set_location_assignment PIN_69 -to pen_mux[4]
+set_location_assignment PIN_70 -to pen_mux[5]
+set_location_assignment PIN_71 -to pen_mux[6]
+set_location_assignment PIN_72 -to pen_mux[7]
+set_location_assignment PIN_122 -to outclk01
+set_location_assignment PIN_123 -to outclk02
+set_location_assignment PIN_124 -to outclk03
+set_location_assignment PIN_125 -to outclk04
+set_location_assignment PIN_128 -to outclk10
+set_location_assignment PIN_129 -to outclk12
+set_location_assignment PIN_130 -to outclk13
+set_location_assignment PIN_131 -to outclk14
+set_location_assignment PIN_84 -to tpwm
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name FAMILY Cyclone
+set_global_assignment -name TOP_LEVEL_ENTITY top
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name DEVICE EP1C6T144C6
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim (VHDL)"
+
+# Simulator Assignments
+# =====================
+set_global_assignment -name SETUP_HOLD_DETECTION OFF
+set_global_assignment -name GLITCH_DETECTION OFF
+set_global_assignment -name GLITCH_INTERVAL "1 ns"
+set_global_assignment -name SIMULATOR_GENERATE_SIGNAL_ACTIVITY_FILE ON
+set_global_assignment -name SIMULATOR_SIGNAL_ACTIVITY_FILE_OUTPUT_DESTINATION top.saf
+
+# LogicLock Region Assignments
+# ============================
+set_global_assignment -name LOGICLOCK_INCREMENTAL_COMPILE_ASSIGNMENT off
+
+# Power Estimation Assignments
+# ============================
+set_global_assignment -name POWER_USE_INPUT_FILE "SIGNAL ACTIVITY FILE"
+set_global_assignment -name POWER_INPUT_SAF_NAME top.saf
+
+# ---------------------------------------
+# start EDA_TOOL_SETTINGS(eda_simulation)
+
+	# EDA Netlist Writer Assignments
+	# ==============================
+	set_global_assignment -name EDA_INCLUDE_VHDL_CONFIGURATION_DECLARATION ON -section_id eda_simulation
+	set_global_assignment -name EDA_MAP_ILLEGAL_CHARACTERS ON -section_id eda_simulation
+	set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+
+# end EDA_TOOL_SETTINGS(eda_simulation)
+# -------------------------------------
+
+# -----------------
+# start ENTITY(top)
+
+	# Analysis & Synthesis Assignments
+	# ================================
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/LEDCTRL -to "LEDCTRL:LC"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/altmem -to "altmem:MEM"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI -to "OUTSPI:S0"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__1 -to "OUTSPI:S1"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__2 -to "OUTSPI:S2"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__3 -to "OUTSPI:S3"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__4 -to "OUTSPI:S4"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__5 -to "OUTSPI:S5"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__6 -to "OUTSPI:S6"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__7 -to "OUTSPI:S7"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__8 -to "OUTSPI:S8"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/OUTSPI__9 -to "OUTSPI:S9"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/SIMPLEPWM -to "SIMPLEPWM:PWM"
+	set_instance_assignment -name INCREMENTAL_DESIGN_PARTITION db/mypll -to "mypll:PLL"
+
+# end ENTITY(top)
+# ---------------

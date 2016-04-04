@@ -1,0 +1,106 @@
+# Copyright (C) 1991-2005 Altera Corporation
+# Any  megafunction  design,  and related netlist (encrypted  or  decrypted),
+# support information,  device programming or simulation file,  and any other
+# associated  documentation or information  provided by  Altera  or a partner
+# under  Altera's   Megafunction   Partnership   Program  may  be  used  only
+# to program  PLD  devices (but not masked  PLD  devices) from  Altera.   Any
+# other  use  of such  megafunction  design,  netlist,  support  information,
+# device programming or simulation file,  or any other  related documentation
+# or information  is prohibited  for  any  other purpose,  including, but not
+# limited to  modification,  reverse engineering,  de-compiling, or use  with
+# any other  silicon devices,  unless such use is  explicitly  licensed under
+# a separate agreement with  Altera  or a megafunction partner.  Title to the
+# intellectual property,  including patents,  copyrights,  trademarks,  trade
+# secrets,  or maskworks,  embodied in any such megafunction design, netlist,
+# support  information,  device programming or simulation file,  or any other
+# related documentation or information provided by  Altera  or a megafunction
+# partner, remains with Altera, the megafunction partner, or their respective
+# licensors. No other licenses, including any licenses needed under any third
+# party's intellectual property, are provided herein.
+
+
+# The default values for assignments are stored in the file
+#		top_assignment_defaults.qdf
+# If this file doesn't exist, and for assignments not listed, see file
+#		assignment_defaults.qdf
+
+# Altera recommends that you do not modify this file. This
+# file is updated automatically by the Quartus II software
+# and any changes you make may be lost or overwritten.
+
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name SPEED_DISK_USAGE_TRADEOFF SMART
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 4.2
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "10:41:52  FEBRUARY 04, 2005"
+set_global_assignment -name LAST_QUARTUS_VERSION 6.1
+set_global_assignment -name VHDL_FILE ../../vhdl_source/inspi.vhd
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name VECTOR_WAVEFORM_FILE top.vwf
+set_global_assignment -name SIGNALTAP_FILE stp1.stp
+set_global_assignment -name SIGNALTAP_FILE "C:\\work\\myArrow\\arm-school\\quartus\\inspi\\stp1.stp"
+
+# Pin & Location Assignments
+# ==========================
+set_location_assignment PIN_93 -to tclk
+set_location_assignment PIN_85 -to tcsel
+set_location_assignment PIN_97 -to tindata
+set_location_assignment PIN_122 -to toutdata[0]
+set_location_assignment PIN_123 -to toutdata[1]
+set_location_assignment PIN_124 -to toutdata[2]
+set_location_assignment PIN_125 -to toutdata[3]
+set_location_assignment PIN_128 -to toutdata[4]
+set_location_assignment PIN_129 -to toutdata[5]
+set_location_assignment PIN_130 -to toutdata[6]
+set_location_assignment PIN_131 -to toutdata[7]
+set_location_assignment PIN_132 -to toutrdy
+set_location_assignment PIN_16 -to tinclk
+set_location_assignment PIN_133 -to toutclk
+set_location_assignment PIN_134 -to toutio
+set_location_assignment PIN_96 -to tsync
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name FAMILY Cyclone
+set_global_assignment -name TOP_LEVEL_ENTITY top
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name DEVICE EP1C6T144C6
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim (VHDL)"
+
+# Assembler Assignments
+# =====================
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
+
+# SignalTap II Assignments
+# ========================
+set_global_assignment -name ENABLE_SIGNALTAP On
+set_global_assignment -name USE_SIGNALTAP_FILE "C:\\work\\myArrow\\arm-school\\quartus\\inspi\\stp1.stp"
+
+# ---------------------------------------
+# start EDA_TOOL_SETTINGS(eda_simulation)
+
+	# EDA Netlist Writer Assignments
+	# ==============================
+	set_global_assignment -name EDA_INCLUDE_VHDL_CONFIGURATION_DECLARATION ON -section_id eda_simulation
+	set_global_assignment -name EDA_MAP_ILLEGAL_CHARACTERS ON -section_id eda_simulation
+	set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+
+# end EDA_TOOL_SETTINGS(eda_simulation)
+# -------------------------------------
+
+# ---------------------------------------------------
+# start AUTO_INSERT_SLD_NODE_ENTITY(auto_signaltap_0)
+
+	# SignalTap II Assignments
+	# ========================
+
+# end AUTO_INSERT_SLD_NODE_ENTITY(auto_signaltap_0)
+# -------------------------------------------------

@@ -1,0 +1,7 @@
+# KDevelop Custom Project File List
+fs.c
+hello.c
+hello_fs.c
+Makefile
+simple.c
+threads.c

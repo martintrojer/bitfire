@@ -1,0 +1,3868 @@
+diff -urN --exclude=.svn lua-5.1.1/Makefile lua-5.1.1-patched/Makefile
+--- lua-5.1.1/Makefile	2006-06-02 13:53:38.000000000 +0300
++++ lua-5.1.1-patched/Makefile	2006-08-27 00:36:39.000000000 +0300
+@@ -52,7 +52,7 @@
+ all:	$(PLAT)
+ 
+ $(PLATS) clean:
+-	cd src && $(MAKE) $@
++	cd src && $(MAKE) $@ MYCFLAGS=$(MYCFLAGS)
+ 
+ test:	dummy
+ 	src/lua test/hello.lua
+diff -urN --exclude=.svn lua-5.1.1/src/BUGS lua-5.1.1-patched/src/BUGS
+--- lua-5.1.1/src/BUGS	1970-01-01 02:00:00.000000000 +0200
++++ lua-5.1.1-patched/src/BUGS	2006-09-11 01:07:30.000000000 +0300
+@@ -0,0 +1,9 @@
++
++Testing required:
++- file operations, reading/writing different kinds of numbers
++  (either code review, practical tests, or both.. :)
++
++- complex number operations, in practise..
++
++- test suite:  complex operations, basic operations, all....
++
+diff -urN --exclude=.svn lua-5.1.1/src/Makefile lua-5.1.1-patched/src/Makefile
+--- lua-5.1.1/src/Makefile	2006-03-22 02:41:49.000000000 +0200
++++ lua-5.1.1-patched/src/Makefile	2006-10-22 18:40:00.000000000 +0300
+@@ -25,7 +25,7 @@
+ LUA_A=	liblua.a
+ CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
+ 	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
+-	lundump.o lvm.o lzio.o
++	lundump.o lvm.o lzio.o lnum.o
+ LIB_O=	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
+ 	lstrlib.o loadlib.o linit.o
+ 
+@@ -80,29 +80,29 @@
+ 	@echo "Please choose a platform: $(PLATS)"
+ 
+ aix:
+-	$(MAKE) all CC="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-ldl" MYLDFLAGS="-brtl -bexpall"
++	$(MAKE) all CC="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN $(MYCFLAGS)" MYLIBS="-ldl" MYLDFLAGS="-brtl -bexpall"
+ 
+ ansi:
+-	$(MAKE) all MYCFLAGS=-DLUA_ANSI
++	$(MAKE) all "MYCFLAGS=-DLUA_ANSI $(MYCFLAGS)"
+ 
+ bsd:
+-	$(MAKE) all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E"
++	$(MAKE) all "MYCFLAGS=-DLUA_USE_POSIX -DLUA_USE_DLOPEN $(MYCFLAGS)" MYLIBS="-Wl,-E"
+ 
+ generic:
+-	$(MAKE) all MYCFLAGS=
++	$(MAKE) all "MYCFLAGS=$(MYCFLAGS)"
+ 
+ linux:
+-	$(MAKE) all MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E -ldl -lreadline -lhistory -lncurses"
++	$(MAKE) all "MYCFLAGS=-DLUA_USE_LINUX $(MYCFLAGS)" MYLIBS="-Wl,-E -ldl -lreadline -lhistory -lncurses"
+ 
+ macosx:
+-	$(MAKE) all MYCFLAGS=-DLUA_USE_MACOSX
+-# use this on Mac OS X 10.4
+-#	$(MAKE) all MYCFLAGS="-DLUA_USE_MACOSX -DLUA_USE_READLINE" MYLIBS="-lreadline"
++	$(MAKE) all "MYCFLAGS=-DLUA_USE_MACOSX -DLUA_USE_READLINE $(MYCFLAGS)" "MYLIBS=-lreadline"
++# use this on Mac OS X 10.3
++#	$(MAKE) all "MYCFLAGS=-DLUA_USE_MACOSX $(MYCFLAGS)"
+ 
+ mingw:
+ 	$(MAKE) "LUA_A=lua51.dll" "LUA_T=lua.exe" \
+ 	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
+-	"MYCFLAGS=-DLUA_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" lua.exe
++	"MYCFLAGS=-DLUA_BUILD_AS_DLL $(MYCFLAGS)" "MYLIBS=" "MYLDFLAGS=-s" lua.exe
+ 
+ posix:
+ 	$(MAKE) all MYCFLAGS=-DLUA_USE_POSIX
+@@ -143,6 +143,7 @@
+ lmathlib.o: lmathlib.c lua.h luaconf.h lauxlib.h lualib.h
+ lmem.o: lmem.c lua.h luaconf.h ldebug.h lstate.h lobject.h llimits.h \
+   ltm.h lzio.h lmem.h ldo.h
++lnum.o: lnum.c lnum.h lua.h llex.h lnum_config.h
+ loadlib.o: loadlib.c lauxlib.h lua.h luaconf.h lobject.h llimits.h \
+   lualib.h
+ lobject.o: lobject.c lua.h luaconf.h ldo.h lobject.h llimits.h lstate.h \
+diff -urN --exclude=.svn lua-5.1.1/src/input.dat lua-5.1.1-patched/src/input.dat
+--- lua-5.1.1/src/input.dat	1970-01-01 02:00:00.000000000 +0200
++++ lua-5.1.1-patched/src/input.dat	2006-08-29 10:54:54.000000000 +0300
+@@ -0,0 +1 @@
++1 2 5 6.2
+diff -urN --exclude=.svn lua-5.1.1/src/lapi.c lua-5.1.1-patched/src/lapi.c
+--- lua-5.1.1/src/lapi.c	2006-06-07 15:37:17.000000000 +0300
++++ lua-5.1.1-patched/src/lapi.c	2006-09-11 01:07:31.000000000 +0300
+@@ -237,12 +237,16 @@
+ 
+ LUA_API int lua_type (lua_State *L, int idx) {
+   StkId o = index2adr(L, idx);
+-  return (o == luaO_nilobject) ? LUA_TNONE : ttype(o);
++  /* Integers are reported as number, this is the outside API. */
++  return (o == luaO_nilobject) ? LUA_TNONE : ttype2(o);
+ }
+ 
+ 
+ LUA_API const char *lua_typename (lua_State *L, int t) {
+   UNUSED(L);
++  /* The 't' type value is part of external interface, and thus does NOT
++   * ever-never contain LUA_TINT, so we need not prepare for that.
++   */
+   return (t == LUA_TNONE) ? "no value" : luaT_typenames[t];
+ }
+ 
+@@ -254,9 +258,20 @@
+ 
+ 
+ LUA_API int lua_isnumber (lua_State *L, int idx) {
+-  TValue n;
++  TValue tmp;
+   const TValue *o = index2adr(L, idx);
+-  return tonumber(o, &n);
++  return tonumber(o, &tmp);
++}
++
++
++LUA_API int lua_isinteger (lua_State *L, int idx) {
++  TValue tmp;
++  const TValue *o = index2adr(L, idx);
++#ifdef LUA_TINT
++  return tonumber(o, &tmp) && ttisinteger(o);
++#else
++  return tonumber(o, &tmp) && floor(nvalue(o)) == nvalue(o);
++#endif
+ }
+ 
+ 
+@@ -305,23 +320,42 @@
+ }
+ 
+ 
++/* Using 'lua_tonumber()' may incur accuracy lost, when running on float+int
++   arrangement. Use of 'lua_tointeger()' provides better accuracy (no casting).
+ 
++   On complex number mode, only reals are read this way (trying to read a complex
++   number will cause an error; since there's no place to store the imaginary part).
++*/
+ LUA_API lua_Number lua_tonumber (lua_State *L, int idx) {
+-  TValue n;
++  TValue tmp;
+   const TValue *o = index2adr(L, idx);
+-  if (tonumber(o, &n))
++  if (tonumber(o, &tmp)) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    if (nvalue2(o) != 0)
++      luaG_runerror(L, "expecting a real number");
++#endif
+     return nvalue(o);
+-  else
+-    return 0;
++  }
++  return 0;
+ }
+ 
+ 
+ LUA_API lua_Integer lua_tointeger (lua_State *L, int idx) {
+-  TValue n;
++  TValue tmp;
+   const TValue *o = index2adr(L, idx);
+-  if (tonumber(o, &n)) {
++  if (tonumber(o, &tmp)) {
+     lua_Integer res;
+-    lua_Number num = nvalue(o);
++    lua_Number num;
++#ifdef LUA_TINT
++    if (ttisinteger(o)) return ivalue(o);
++# ifdef LUA_NUMBER_MODE_COMPLEX
++    if (nvalue2_fast(o) != 0)
++      luaG_runerror(L, "expecting a real number");
++# endif
++    num = nvalue_fast(o);
++#else
++    num = nvalue(o);
++#endif
+     lua_number2integer(res, num);
+     return res;
+   }
+@@ -330,6 +364,17 @@
+ }
+ 
+ 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUA_API lua_Complex lua_tocomplex (lua_State *L, int idx) {
++  TValue tmp;
++  const TValue *o = index2adr(L, idx);
++  if (tonumber(o, &tmp))
++    return nvalue(o) + nvalue2(o)*I;
++  return 0;
++}
++#endif
++
++
+ LUA_API int lua_toboolean (lua_State *L, int idx) {
+   const TValue *o = index2adr(L, idx);
+   return !l_isfalse(o);
+@@ -360,6 +405,9 @@
+     case LUA_TSTRING: return tsvalue(o)->len;
+     case LUA_TUSERDATA: return uvalue(o)->len;
+     case LUA_TTABLE: return luaH_getn(hvalue(o));
++#ifdef LUA_TINT
++    case LUA_TINT:
++#endif
+     case LUA_TNUMBER: {
+       size_t l;
+       lua_lock(L);  /* `luaV_tostring' may create a new string */
+@@ -422,6 +470,9 @@
+ }
+ 
+ 
++/* Using 'lua_pushnumber()' may lose accuracy on pushing integers,
++ * in a float+int arrangement. 'lua_pushinteger' will not.
++ */
+ LUA_API void lua_pushnumber (lua_State *L, lua_Number n) {
+   lua_lock(L);
+   setnvalue(L->top, n);
+@@ -432,10 +483,20 @@
+ 
+ LUA_API void lua_pushinteger (lua_State *L, lua_Integer n) {
+   lua_lock(L);
+-  setnvalue(L->top, cast_num(n));
++  setivalue(L->top, n);
++  api_incr_top(L);
++  lua_unlock(L);
++}
++
++
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUA_API void lua_pushcomplex (lua_State *L, lua_Complex v) {
++  lua_lock(L);
++  setnvalue2(L->top, creal(v), cimag(v));
+   api_incr_top(L);
+   lua_unlock(L);
+ }
++#endif
+ 
+ 
+ LUA_API void lua_pushlstring (lua_State *L, const char *s, size_t len) {
+@@ -594,7 +655,7 @@
+       mt = uvalue(obj)->metatable;
+       break;
+     default:
+-      mt = G(L)->mt[ttype(obj)];
++      mt = G(L)->mt[ttype2(obj)];
+       break;
+   }
+   if (mt == NULL)
+@@ -717,7 +778,7 @@
+       break;
+     }
+     default: {
+-      G(L)->mt[ttype(obj)] = mt;
++      G(L)->mt[ttype2(obj)] = mt;
+       break;
+     }
+   }
+@@ -1078,3 +1139,20 @@
+   return name;
+ }
+ 
++
++/* Help function for 'luaB_tonumber()', avoids multiple str->number
++ * conversions for Lua "tonumber()".
++ */
++int lua_pushvalue_as_number (lua_State *L, int idx)
++{
++  TValue tmp;
++  const TValue *o = index2adr(L, 1);
++  if (!tonumber(o, &tmp)) return 0;
++#ifdef LUA_TINT
++  if (ttisinteger(o)) lua_pushinteger(L, ivalue(o));
++  else                lua_pushnumber(L, nvalue_fast(o));
++#else
++  lua_pushnumber(L, nvalue(o));
++#endif
++  return 1;
++}
+diff -urN --exclude=.svn lua-5.1.1/src/lapi.h lua-5.1.1-patched/src/lapi.h
+--- lua-5.1.1/src/lapi.h	2005-04-25 22:24:10.000000000 +0300
++++ lua-5.1.1-patched/src/lapi.h	2006-09-01 18:16:20.000000000 +0300
+@@ -13,4 +13,6 @@
+ 
+ LUAI_FUNC void luaA_pushobject (lua_State *L, const TValue *o);
+ 
++int lua_pushvalue_as_number (lua_State *L, int idx);
++
+ #endif
+diff -urN --exclude=.svn lua-5.1.1/src/lauxlib.c lua-5.1.1-patched/src/lauxlib.c
+--- lua-5.1.1/src/lauxlib.c	2006-03-21 21:31:09.000000000 +0200
++++ lua-5.1.1-patched/src/lauxlib.c	2006-10-22 18:40:00.000000000 +0300
+@@ -23,7 +23,7 @@
+ #include "lua.h"
+ 
+ #include "lauxlib.h"
+-
++#include "llimits.h"
+ 
+ #define FREELIST_REF	0	/* free list of references */
+ 
+@@ -43,7 +43,7 @@
+ LUALIB_API int luaL_argerror (lua_State *L, int narg, const char *extramsg) {
+   lua_Debug ar;
+   if (!lua_getstack(L, 0, &ar))  /* no stack frame? */
+-    return luaL_error(L, "bad argument #%d (%s)", narg, extramsg);
++    return luaL_error(L, "bad argument #%d (%s)", (LUAI_UACINTEGER) narg, extramsg);
+   lua_getinfo(L, "n", &ar);
+   if (strcmp(ar.namewhat, "method") == 0) {
+     narg--;  /* do not count `self' */
+@@ -54,7 +54,7 @@
+   if (ar.name == NULL)
+     ar.name = "?";
+   return luaL_error(L, "bad argument #%d to " LUA_QS " (%s)",
+-                        narg, ar.name, extramsg);
++                        (LUAI_UACINTEGER) narg, ar.name, extramsg);
+ }
+ 
+ 
+@@ -75,7 +75,7 @@
+   if (lua_getstack(L, level, &ar)) {  /* check function at level */
+     lua_getinfo(L, "Sl", &ar);  /* get info about it */
+     if (ar.currentline > 0) {  /* is there info? */
+-      lua_pushfstring(L, "%s:%d: ", ar.short_src, ar.currentline);
++      lua_pushfstring(L, "%s:%d: ", ar.short_src, (LUAI_UACINTEGER) ar.currentline);
+       return;
+     }
+   }
+@@ -109,7 +109,7 @@
+ }
+ 
+ 
+-LUALIB_API int luaL_newmetatable (lua_State *L, const char *tname) {
++LUALIB_API int /*bool*/ luaL_newmetatable (lua_State *L, const char *tname) {
+   lua_getfield(L, LUA_REGISTRYINDEX, tname);  /* get registry.name */
+   if (!lua_isnil(L, -1))  /* name already in use? */
+     return 0;  /* leave previous value on top, but return 0 */
+@@ -187,10 +187,10 @@
+ 
+ 
+ LUALIB_API lua_Integer luaL_checkinteger (lua_State *L, int narg) {
+-  lua_Integer d = lua_tointeger(L, narg);
+-  if (d == 0 && !lua_isnumber(L, narg))  /* avoid extra test when d is not 0 */
+-    tag_error(L, narg, LUA_TNUMBER);
+-  return d;
++  lua_Integer v = lua_tointeger(L, narg);
++  if (v == 0 && !lua_isinteger(L, narg))  /* avoid extra test when v is not 0 */
++    tag_error(L, narg, LUA_TNUMBER);    /* use LUA_TNUMBER; that is the type for the user */
++  return v;
+ }
+ 
+ 
+@@ -200,7 +200,17 @@
+ }
+ 
+ 
+-LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *event) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUALIB_API lua_Complex luaL_checkcomplex (lua_State *L, int narg) {
++  lua_Complex d = lua_tocomplex(L, narg);
++  if (d == 0 && !lua_isnumber(L, narg))  /* avoid extra test when d is not 0 */
++    tag_error(L, narg, LUA_TNUMBER);
++  return d;
++}
++#endif
++
++
++LUALIB_API int /*bool*/ luaL_getmetafield (lua_State *L, int obj, const char *event) {
+   if (!lua_getmetatable(L, obj))  /* no metatable? */
+     return 0;
+   lua_pushstring(L, event);
+@@ -216,7 +226,7 @@
+ }
+ 
+ 
+-LUALIB_API int luaL_callmeta (lua_State *L, int obj, const char *event) {
++LUALIB_API int /*bool*/ luaL_callmeta (lua_State *L, int obj, const char *event) {
+   obj = abs_index(L, obj);
+   if (!luaL_getmetafield(L, obj, event))  /* no metafield? */
+     return 0;
+@@ -395,7 +405,7 @@
+ #define LIMIT	(LUA_MINSTACK/2)
+ 
+ 
+-static int emptybuffer (luaL_Buffer *B) {
++static lu_bool emptybuffer (luaL_Buffer *B) {
+   size_t l = bufflen(B);
+   if (l == 0) return 0;  /* put nothing on stack */
+   else {
+diff -urN --exclude=.svn lua-5.1.1/src/lauxlib.h lua-5.1.1-patched/src/lauxlib.h
+--- lua-5.1.1/src/lauxlib.h	2006-04-12 23:31:15.000000000 +0300
++++ lua-5.1.1-patched/src/lauxlib.h	2006-09-11 01:07:31.000000000 +0300
+@@ -58,6 +58,10 @@
+ LUALIB_API lua_Integer (luaL_optinteger) (lua_State *L, int nArg,
+                                           lua_Integer def);
+ 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUALIB_API lua_Complex (luaL_checkcomplex) (lua_State *L, int narg);
++#endif
++
+ LUALIB_API void (luaL_checkstack) (lua_State *L, int sz, const char *msg);
+ LUALIB_API void (luaL_checktype) (lua_State *L, int narg, int t);
+ LUALIB_API void (luaL_checkany) (lua_State *L, int narg);
+diff -urN --exclude=.svn lua-5.1.1/src/lbaselib.c lua-5.1.1-patched/src/lbaselib.c
+--- lua-5.1.1/src/lbaselib.c	2006-06-02 18:34:00.000000000 +0300
++++ lua-5.1.1-patched/src/lbaselib.c	2006-11-02 09:13:10.000000000 +0200
+@@ -18,7 +18,9 @@
+ 
+ #include "lauxlib.h"
+ #include "lualib.h"
+-
++#include "llimits.h"
++#include "lobject.h"
++#include "lapi.h"
+ 
+ 
+ 
+@@ -54,20 +56,38 @@
+   int base = luaL_optint(L, 2, 10);
+   if (base == 10) {  /* standard conversion */
+     luaL_checkany(L, 1);
++#if 1
++    /* We can do "tonumber()" without losing accuracy, but only underneath
++	 * the Lua API (not here) by using a single string->number conversion.
++     * 
++     * Note: even the 5.1.1 code (below) would cause multiple
++     *       (unnecessary) string->number conversions, so using this
++     *       always.
++     */
++    if (lua_pushvalue_as_number(L,1))		/* API extension (hack) */
++        return 1;
++#else
++    /* 5.1.1 code */
+     if (lua_isnumber(L, 1)) {
+       lua_pushnumber(L, lua_tonumber(L, 1));
+       return 1;
+-    }
++	}
++#endif
+   }
+   else {
+     const char *s1 = luaL_checkstring(L, 1);
+     char *s2;
+-    unsigned long n;
++    lua_str2ul_t n;
+     luaL_argcheck(L, 2 <= base && base <= 36, 2, "base out of range");
+-    n = strtoul(s1, &s2, base);
++    n = lua_str2ul(s1, &s2, base);
+     if (s1 != s2) {  /* at least one valid digit? */
+       while (isspace((unsigned char)(*s2))) s2++;  /* skip trailing spaces */
+       if (*s2 == '\0') {  /* no invalid trailing characters? */
++	  
++		/* Push as number, there needs to be separate 'luaB_tointeger' for
++		 * when the caller wants to preserve the bits (matters if unsigned
++		 * values are used).
++		 */
+         lua_pushnumber(L, (lua_Number)n);
+         return 1;
+       }
+@@ -125,7 +145,7 @@
+     lua_getinfo(L, "f", &ar);
+     if (lua_isnil(L, -1))
+       luaL_error(L, "no function environment for tail call at level %d",
+-                    level);
++                    (LUAI_UACINTEGER)level);
+   }
+ }
+ 
+@@ -140,11 +160,11 @@
+ }
+ 
+ 
+-static int luaB_setfenv (lua_State *L) {
++static lu_bool luaB_setfenv (lua_State *L) {
+   luaL_checktype(L, 2, LUA_TTABLE);
+   getfunc(L);
+   lua_pushvalue(L, 2);
+-  if (lua_isnumber(L, 1) && lua_tonumber(L, 1) == 0) {
++  if (lua_isnumber(L, 1) && lua_tointeger(L, 1) == 0) {
+     /* change environment of current thread */
+     lua_pushthread(L);
+     lua_insert(L, -2);
+@@ -584,7 +604,7 @@
+ }
+ 
+ 
+-static int luaB_corunning (lua_State *L) {
++static lu_bool luaB_corunning (lua_State *L) {
+   if (lua_pushthread(L))
+     return 0;  /* main thread is not a coroutine */
+   else
+diff -urN --exclude=.svn lua-5.1.1/src/lcode.c lua-5.1.1-patched/src/lcode.c
+--- lua-5.1.1/src/lcode.c	2006-03-21 21:28:49.000000000 +0200
++++ lua-5.1.1-patched/src/lcode.c	2006-09-01 18:16:20.000000000 +0300
+@@ -22,13 +22,21 @@
+ #include "lopcodes.h"
+ #include "lparser.h"
+ #include "ltable.h"
++#include "lnum.h"
+ 
+ 
+ #define hasjumps(e)	((e)->t != (e)->f)
+ 
+-
+-static int isnumeral(expdesc *e) {
+-  return (e->k == VKNUM && e->t == NO_JUMP && e->f == NO_JUMP);
++static lu_bool isnumeral(expdesc *e) {
++  lu_bool ek=
++#ifdef LUA_TINT
++    (e->k == VKINT) ||
++#endif 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    (e->k == VKNUM2) ||
++#endif
++    (e->k == VKNUM);
++  return (ek && e->t == NO_JUMP && e->f == NO_JUMP);
+ }
+ 
+ 
+@@ -114,7 +122,7 @@
+ ** check whether list has any jump that do not produce a value
+ ** (or produce an inverted value)
+ */
+-static int need_value (FuncState *fs, int list) {
++static lu_bool need_value (FuncState *fs, int list) {
+   for (; list != NO_JUMP; list = getjump(fs, list)) {
+     Instruction i = *getjumpcontrol(fs, list);
+     if (GET_OPCODE(i) != OP_TESTSET) return 1;
+@@ -123,7 +131,7 @@
+ }
+ 
+ 
+-static int patchtestreg (FuncState *fs, int node, int reg) {
++static lu_bool patchtestreg (FuncState *fs, int node, int reg) {
+   Instruction *i = getjumpcontrol(fs, node);
+   if (GET_OPCODE(*i) != OP_TESTSET)
+     return 0;  /* cannot patch other instructions */
+@@ -226,12 +234,20 @@
+   TValue *idx = luaH_set(L, fs->h, k);
+   Proto *f = fs->f;
+   int oldsize = f->sizek;
++#ifdef LUA_TINT
++  lua_assert( !ttisnumber_raw(idx) );
++  if (ttisinteger(idx)) {
++    lua_assert(luaO_rawequalObj(&fs->f->k[ (int) ivalue(idx) ], v));
++    return ivalue(idx);
++  }
++#else
+   if (ttisnumber(idx)) {
+     lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(nvalue(idx))], v));
+     return cast_int(nvalue(idx));
+   }
++#endif
+   else {  /* constant not found; create a new entry */
+-    setnvalue(idx, cast_num(fs->nk));
++    setivalue(idx, fs->nk);
+     luaM_growvector(L, f->k, fs->nk, f->sizek, TValue,
+                     MAXARG_Bx, "constant table overflow");
+     while (oldsize < f->sizek) setnilvalue(&f->k[oldsize++]);
+@@ -256,6 +272,23 @@
+ }
+ 
+ 
++#ifdef LUA_TINT
++int luaK_integerK (FuncState *fs, lua_Integer r) {
++  TValue o;
++  setivalue(&o, r);
++  return addk(fs, &o, &o);
++}
++#endif
++
++
++#ifdef LUA_NUMBER_MODE_COMPLEX
++int luaK_number2K (FuncState *fs, lua_Number a, lua_Number b) {
++  TValue o;
++  setnvalue2(&o, a, b);
++  return addk(fs, &o, &o);
++}
++#endif
++
+ static int boolK (FuncState *fs, int b) {
+   TValue o;
+   setbvalue(&o, b);
+@@ -354,6 +387,18 @@
+       luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.nval));
+       break;
+     }
++#ifdef LUA_TINT
++    case VKINT: {
++      luaK_codeABx(fs, OP_LOADK, reg, luaK_integerK(fs, e->u.ival));
++      break;
++    }
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case VKNUM2: {
++      luaK_codeABx(fs, OP_LOADK, reg, luaK_number2K(fs, 0, e->u.nval));
++      break;
++    }
++#endif
+     case VRELOCABLE: {
+       Instruction *pc = &getcode(fs, e);
+       SETARG_A(*pc, reg);
+@@ -439,6 +484,12 @@
+ int luaK_exp2RK (FuncState *fs, expdesc *e) {
+   luaK_exp2val(fs, e);
+   switch (e->k) {
++#ifdef LUA_TINT
++    case VKINT:
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case VKNUM2:
++#endif
+     case VKNUM:
+     case VTRUE:
+     case VFALSE:
+@@ -446,6 +497,12 @@
+       if (fs->nk <= MAXINDEXRK) {  /* constant fit in RK operand? */
+         e->u.s.info = (e->k == VNIL)  ? nilK(fs) :
+                       (e->k == VKNUM) ? luaK_numberK(fs, e->u.nval) :
++#ifdef LUA_TINT
++                      (e->k == VKINT) ? luaK_integerK(fs, e->u.ival) :
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++                      (e->k == VKNUM2) ? luaK_number2K(fs, 0, e->u.nval) :
++#endif
+                                         boolK(fs, (e->k == VTRUE));
+         e->k = VK;
+         return RKASK(e->u.s.info);
+@@ -535,6 +592,12 @@
+   int pc;  /* pc of last jump */
+   luaK_dischargevars(fs, e);
+   switch (e->k) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case VKNUM2:
++#endif
++#ifdef LUA_TINT
++    case VKINT:
++#endif
+     case VK: case VKNUM: case VTRUE: {
+       pc = NO_JUMP;  /* always true; do nothing */
+       break;
+@@ -593,6 +656,12 @@
+       e->k = VTRUE;
+       break;
+     }
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case VKNUM2:
++#endif
++#ifdef LUA_TINT
++    case VKINT:
++#endif
+     case VK: case VKNUM: case VTRUE: {
+       e->k = VFALSE;
+       break;
+@@ -627,27 +696,76 @@
+ }
+ 
+ 
+-static int constfolding (OpCode op, expdesc *e1, expdesc *e2) {
++static lu_bool constfolding (OpCode op, expdesc *e1, expdesc *e2) {
+   lua_Number v1, v2, r;
++  int vkres= VKNUM;
+   if (!isnumeral(e1) || !isnumeral(e2)) return 0;
++
++  /* real and imaginary parts don't mix. */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  if (e1->k == VKNUM2) {
++    if ((op != OP_UNM) && (e2->k != VKNUM2)) return 0; 
++    vkres= VKNUM2; }
++  else if (e2->k == VKNUM2) { return 0; }
++#endif
++#ifdef LUA_TINT
++  if ((e1->k == VKINT) && (e2->k == VKINT)) {
++    lua_Integer i1= e1->u.ival, i2= e2->u.ival;
++    lua_Integer rr;
++    lu_bool done= 0;
++    /* Integer/integer calculations (maybe end up producing floating point) */
++    switch (op) {
++      case OP_ADD: done= try_addint( &rr, i1, i2 ); break;
++      case OP_SUB: done= try_subint( &rr, i1, i2 ); break;
++      case OP_MUL: done= try_mulint( &rr, i1, i2 ); break;
++      case OP_DIV: done= try_divint( &rr, i1, i2 ); break;
++      case OP_MOD: done= try_modint( &rr, i1, i2 ); break;
++      case OP_POW: done= try_powint( &rr, i1, i2 ); break;
++      case OP_UNM: done= try_unmint( &rr, i1 ); break;
++      default:     done= 0; break;
++    }
++    if (done) {
++      e1->u.ival = rr;  /* We remained within integer range, and accuracy! */
++      return 1;
++    }
++  }
++  v1 = (e1->k == VKINT) ? ((lua_Number)e1->u.ival) : e1->u.nval;
++  v2 = (e2->k == VKINT) ? ((lua_Number)e2->u.ival) : e2->u.nval;
++#else
+   v1 = e1->u.nval;
+   v2 = e2->u.nval;
++#endif
+   switch (op) {
+     case OP_ADD: r = luai_numadd(v1, v2); break;
+     case OP_SUB: r = luai_numsub(v1, v2); break;
+-    case OP_MUL: r = luai_nummul(v1, v2); break;
++    case OP_MUL: 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++        if (vkres==VKNUM2) return 0;    /* leave to runtime (could do here, but not worth it?) */
++#endif
++        r = luai_nummul(v1, v2); break;
+     case OP_DIV:
+       if (v2 == 0) return 0;  /* do not attempt to divide by 0 */
+-      r = luai_numdiv(v1, v2); break;
++#ifdef LUA_NUMBER_MODE_COMPLEX
++        if (vkres==VKNUM2) return 0;    /* leave to runtime */
++#endif
++        r = luai_numdiv(v1, v2); break;
+     case OP_MOD:
+       if (v2 == 0) return 0;  /* do not attempt to divide by 0 */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++      if (vkres==VKNUM2) return 0;    /* leave to runtime */
++#endif
+       r = luai_nummod(v1, v2); break;
+-    case OP_POW: r = luai_numpow(v1, v2); break;
++    case OP_POW: 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++      if (vkres==VKNUM2) return 0;    /* leave to runtime */
++#endif
++      r = luai_numpow(v1, v2); break;
+     case OP_UNM: r = luai_numunm(v1); break;
+     case OP_LEN: return 0;  /* no constant folding for 'len' */
+     default: lua_assert(0); r = 0; break;
+   }
+   if (luai_numisnan(r)) return 0;  /* do not attempt to produce NaN */
++  e1->k = vkres;
+   e1->u.nval = r;
+   return 1;
+ }
+@@ -684,8 +802,15 @@
+ 
+ 
+ void luaK_prefix (FuncState *fs, UnOpr op, expdesc *e) {
++  /* Q: is the 'e2' really needed; couldn't we use 'e' for both params like
++   *    when calling 'Arith()' at lvm.c */
+   expdesc e2;
+-  e2.t = e2.f = NO_JUMP; e2.k = VKNUM; e2.u.nval = 0;
++  e2.t = e2.f = NO_JUMP; 
++#ifdef LUA_TINT
++  e2.k = VKINT; e2.u.ival = 0;
++#else
++  e2.k = VKNUM; e2.u.nval = 0;
++#endif
+   switch (op) {
+     case OPR_MINUS: {
+       if (e->k == VK)
+@@ -756,7 +881,8 @@
+       }
+       break;
+     }
+-    case OPR_ADD: codearith(fs, OP_ADD, e1, e2); break;
++    case OPR_ADD: 
++    codearith(fs, OP_ADD, e1, e2); break;
+     case OPR_SUB: codearith(fs, OP_SUB, e1, e2); break;
+     case OPR_MUL: codearith(fs, OP_MUL, e1, e2); break;
+     case OPR_DIV: codearith(fs, OP_DIV, e1, e2); break;
+diff -urN --exclude=.svn lua-5.1.1/src/lcode.h lua-5.1.1-patched/src/lcode.h
+--- lua-5.1.1/src/lcode.h	2006-03-21 21:28:03.000000000 +0200
++++ lua-5.1.1-patched/src/lcode.h	2006-08-29 10:54:21.000000000 +0300
+@@ -72,5 +72,8 @@
+ LUAI_FUNC void luaK_posfix (FuncState *fs, BinOpr op, expdesc *v1, expdesc *v2);
+ LUAI_FUNC void luaK_setlist (FuncState *fs, int base, int nelems, int tostore);
+ 
++#ifdef LUA_TINT
++ LUAI_FUNC int luaK_integerK (FuncState *fs, lua_Integer r);
++#endif
+ 
+ #endif
+diff -urN --exclude=.svn lua-5.1.1/src/ldblib.c lua-5.1.1-patched/src/ldblib.c
+--- lua-5.1.1/src/ldblib.c	2005-12-29 17:32:11.000000000 +0200
++++ lua-5.1.1-patched/src/ldblib.c	2006-10-22 18:40:00.000000000 +0300
+@@ -352,7 +352,7 @@
+     lua_getinfo(L1, "Snl", &ar);
+     lua_pushfstring(L, "%s:", ar.short_src);
+     if (ar.currentline > 0)
+-      lua_pushfstring(L, "%d:", ar.currentline);
++      lua_pushfstring(L, "%d:", (LUAI_UACINTEGER) (ar.currentline));
+     if (*ar.namewhat != '\0')  /* is there a name? */
+         lua_pushfstring(L, " in function " LUA_QS, ar.name);
+     else {
+diff -urN --exclude=.svn lua-5.1.1/src/ldebug.c lua-5.1.1-patched/src/ldebug.c
+--- lua-5.1.1/src/ldebug.c	2005-12-22 18:19:56.000000000 +0200
++++ lua-5.1.1-patched/src/ldebug.c	2006-10-22 18:40:00.000000000 +0300
+@@ -287,7 +287,7 @@
+ 
+ #define checkopenop(pt,pc)	luaG_checkopenop((pt)->code[(pc)+1])
+ 
+-int luaG_checkopenop (Instruction i) {
++lu_bool luaG_checkopenop (Instruction i) {
+   switch (GET_OPCODE(i)) {
+     case OP_CALL:
+     case OP_TAILCALL:
+@@ -301,7 +301,7 @@
+ }
+ 
+ 
+-static int checkArgMode (const Proto *pt, int r, enum OpArgMask mode) {
++static lu_bool checkArgMode (const Proto *pt, int r, enum OpArgMask mode) {
+   switch (mode) {
+     case OpArgN: check(r == 0); break;
+     case OpArgU: break;
+@@ -538,7 +538,7 @@
+ 
+ 
+ /* only ANSI way to check whether a pointer points to an array */
+-static int isinstack (CallInfo *ci, const TValue *o) {
++static lu_bool isinstack (CallInfo *ci, const TValue *o) {
+   StkId p;
+   for (p = ci->base; p < ci->top; p++)
+     if (o == p) return 1;
+@@ -548,7 +548,7 @@
+ 
+ void luaG_typeerror (lua_State *L, const TValue *o, const char *op) {
+   const char *name = NULL;
+-  const char *t = luaT_typenames[ttype(o)];
++  const char *t = luaT_typenames[ttype2(o)];
+   const char *kind = (isinstack(L->ci, o)) ?
+                          getobjname(L, L->ci, cast_int(o - L->base), &name) :
+                          NULL;
+@@ -576,8 +576,8 @@
+ 
+ 
+ int luaG_ordererror (lua_State *L, const TValue *p1, const TValue *p2) {
+-  const char *t1 = luaT_typenames[ttype(p1)];
+-  const char *t2 = luaT_typenames[ttype(p2)];
++  const char *t1 = luaT_typenames[ttype2(p1)];
++  const char *t2 = luaT_typenames[ttype2(p2)];
+   if (t1[2] == t2[2])
+     luaG_runerror(L, "attempt to compare two %s values", t1);
+   else
+@@ -592,7 +592,7 @@
+     char buff[LUA_IDSIZE];  /* add file:line information */
+     int line = currentline(L, ci);
+     luaO_chunkid(buff, getstr(getluaproto(ci)->source), LUA_IDSIZE);
+-    luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
++    luaO_pushfstring(L, "%s:%d: %s", buff, (LUAI_UACINTEGER)line, msg);
+   }
+ }
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/ldo.c lua-5.1.1-patched/src/ldo.c
+--- lua-5.1.1/src/ldo.c	2006-06-05 22:36:14.000000000 +0300
++++ lua-5.1.1-patched/src/ldo.c	2006-08-27 00:13:25.000000000 +0300
+@@ -221,7 +221,7 @@
+     for (i=0; i<nvar; i++)  /* put extra arguments into `arg' table */
+       setobj2n(L, luaH_setnum(L, htab, i+1), L->top - nvar + i);
+     /* store counter in field `n' */
+-    setnvalue(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
++    setivalue(luaH_setstr(L, htab, luaS_newliteral(L, "n")), nvar);
+   }
+ #endif
+   /* move fixed parameters to final position */
+diff -urN --exclude=.svn lua-5.1.1/src/ldump.c lua-5.1.1-patched/src/ldump.c
+--- lua-5.1.1/src/ldump.c	2006-02-16 17:53:49.000000000 +0200
++++ lua-5.1.1-patched/src/ldump.c	2006-09-01 18:16:20.000000000 +0300
+@@ -52,6 +52,13 @@
+  DumpVar(x,D);
+ }
+ 
++#ifdef LUA_TINT
++static void DumpInteger(lua_Integer x, DumpState* D)
++{
++ DumpVar(x,D);
++}
++#endif
++
+ static void DumpVector(const void* b, int n, size_t size, DumpState* D)
+ {
+  DumpInt(n,D);
+@@ -93,8 +100,15 @@
+ 	DumpChar(bvalue(o),D);
+ 	break;
+    case LUA_TNUMBER:
+-	DumpNumber(nvalue(o),D);
++#ifdef LUA_TINT
++	DumpNumber(nvalue_fast(o),D);
+ 	break;
++   case LUA_TINT:
++	DumpInteger(ivalue(o),D);
++#else
++	DumpNumber(nvalue(o),D);
++#endif
++    break;
+    case LUA_TSTRING:
+ 	DumpString(rawtsvalue(o),D);
+ 	break;
+diff -urN --exclude=.svn lua-5.1.1/src/lgc.c lua-5.1.1-patched/src/lgc.c
+--- lua-5.1.1/src/lgc.c	2006-05-24 17:34:06.000000000 +0300
++++ lua-5.1.1-patched/src/lgc.c	2006-08-29 16:02:06.000000000 +0300
+@@ -334,7 +334,7 @@
+ ** other objects: if really collected, cannot keep them; for userdata
+ ** being finalized, keep them in keys, but not in values
+ */
+-static int iscleared (const TValue *o, int iskey) {
++static lu_bool iscleared (const TValue *o, int iskey) {
+   if (!iscollectable(o)) return 0;
+   if (ttisstring(o)) {
+     stringmark(rawtsvalue(o));  /* strings are `values', so are never weak */
+diff -urN --exclude=.svn lua-5.1.1/src/liolib.c lua-5.1.1-patched/src/liolib.c
+--- lua-5.1.1/src/liolib.c	2006-05-08 23:14:16.000000000 +0300
++++ lua-5.1.1-patched/src/liolib.c	2006-09-11 01:07:30.000000000 +0300
+@@ -9,6 +9,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <ctype.h>
+ 
+ #define liolib_c
+ #define LUA_LIB
+@@ -18,7 +19,11 @@
+ #include "lauxlib.h"
+ #include "lualib.h"
+ 
++#include "lnum.h"
+ 
++#ifdef LUA_TINT
++# include "llex.h"
++#endif
+ 
+ #define IO_INPUT	1
+ #define IO_OUTPUT	2
+@@ -254,17 +259,68 @@
+ */
+ 
+ 
+-static int read_number (lua_State *L, FILE *f) {
++static lu_bool read_number (lua_State *L, FILE *f) {
+   lua_Number d;
++
++#ifdef LUA_TINT
++  /* Automatically use integer resolution if the data is integer, 
++   * without need for different application level marks ('n' for
++   * all numbers); we don't want applications to think integers
++   * are special from numbers in general. :)
++   * 
++   * Rewinding the file may prove a problem (not necessarily
++   * rewindable).
++   */
++  char buf[ LUAI_MAXNUMBER2STR ];   /* fits any number */
++  lua_Integer n;
++  int i=0, c=0;
++
++  /* - skip any preceding white space
++   * - allow 0xAbcD format etc. (same as Lua parser does)
++   * - if integer, use integer setup, if float, use float
++   */
++  while( i<sizeof(buf)-1 ) {
++    c= fgetc(f);
++    if (c==EOF) break;  /* did we get some? */
++    if (i==0 && isspace(c)) continue;   /* skip white space at the beginning */
++    
++    if (i==1 && buf[0]=='0' && toupper(c)=='X')
++       c= 'x';
++    else if (i>2 && buf[1]=='x')
++        { if (!isxdigit(c)) break; }   /* end of hex string */
++    else
++        { if (!isdigit(c) && c!='.') break; }   /* TBD: how to handle dot here (should be same as 'fscanf()' does)? */
++
++    buf[i++]= c;
++  }
++  buf[i]= '\0';
++
++  if (c!=EOF) ungetc(c,f);     /* push ending character back */
++
++  switch( luaO_str2d( buf, &d, &n ) ) {
++    case TK_INT:
++        lua_pushinteger(L, n);
++        return 1;   /* integer read */
++    case TK_NUMBER:
++        lua_pushnumber(L, d);
++        return 1;   /* FP number read */
++# ifdef LUA_NUMBER_MODE_COMPLEX
++    case TK_NUMBER2:
++        lua_pushcomplex(L, d*I);
++        return 1;   /* Imaginary number read (Ni) */
++# endif
++  }
++#else
+   if (fscanf(f, LUA_NUMBER_SCAN, &d) == 1) {
+     lua_pushnumber(L, d);
+     return 1;
+   }
+-  else return 0;  /* read fails */
++#endif
++  return 0;  /* read fails */
+ }
+ 
+ 
+-static int test_eof (lua_State *L, FILE *f) {
++static lu_bool test_eof (lua_State *L, FILE *f) {
+   int c = getc(f);
+   ungetc(c, f);
+   lua_pushlstring(L, NULL, 0);
+@@ -272,7 +328,7 @@
+ }
+ 
+ 
+-static int read_line (lua_State *L, FILE *f) {
++static lu_bool read_line (lua_State *L, FILE *f) {
+   luaL_Buffer b;
+   luaL_buffinit(L, &b);
+   for (;;) {
+@@ -294,7 +350,7 @@
+ }
+ 
+ 
+-static int read_chars (lua_State *L, FILE *f, size_t n) {
++static lu_bool read_chars (lua_State *L, FILE *f, size_t n) {
+   size_t rlen;  /* how much to read */
+   size_t nr;  /* number of chars actually read */
+   luaL_Buffer b;
+@@ -396,9 +452,14 @@
+   int status = 1;
+   for (; nargs--; arg++) {
+     if (lua_type(L, arg) == LUA_TNUMBER) {
+-      /* optimization: could be done exactly as for strings */
+-      status = status &&
+-          fprintf(f, LUA_NUMBER_FMT, lua_tonumber(L, arg)) > 0;
++          /* optimization: could be done exactly as for strings */
++      if (lua_isinteger(L,arg)) {
++          status = status &&
++              fprintf(f, "%" LUA_INTFRMLEN "d", (LUA_INTFRM_T) lua_tointeger(L, arg)) > 0;
++      } else {
++          status = status &&
++              fprintf(f, LUA_NUMBER_FMT, lua_tonumber(L, arg)) > 0;
++      }
+     }
+     else {
+       size_t l;
+diff -urN --exclude=.svn lua-5.1.1/src/llex.c lua-5.1.1-patched/src/llex.c
+--- lua-5.1.1/src/llex.c	2006-03-09 20:14:31.000000000 +0200
++++ lua-5.1.1-patched/src/llex.c	2006-10-22 18:40:00.000000000 +0300
+@@ -22,6 +22,7 @@
+ #include "lstring.h"
+ #include "ltable.h"
+ #include "lzio.h"
++#include "lnum.h"
+ 
+ 
+ 
+@@ -34,13 +35,17 @@
+ 
+ 
+ /* ORDER RESERVED */
+-const char *const luaX_tokens [] = {
++static const char *const luaX_tokens [] = {
+     "and", "break", "do", "else", "elseif",
+     "end", "false", "for", "function", "if",
+     "in", "local", "nil", "not", "or", "repeat",
+     "return", "then", "true", "until", "while",
+     "..", "...", "==", ">=", "<=", "~=",
+-    "<number>", "<name>", "<string>", "<eof>",
++    "<number>", "<name>", "<string>", "<eof>",  /* ?? or: "<eos>" */
++    "<integer>",
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    "<number2>",
++#endif
+     NULL
+ };
+ 
+@@ -78,7 +83,7 @@
+ const char *luaX_token2str (LexState *ls, int token) {
+   if (token < FIRST_RESERVED) {
+     lua_assert(token == cast(unsigned char, token));
+-    return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token) :
++    return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", (LUAI_UACINTEGER)token) :
+                               luaO_pushfstring(ls->L, "%c", token);
+   }
+   else
+@@ -90,7 +95,11 @@
+   switch (token) {
+     case TK_NAME:
+     case TK_STRING:
++    case TK_INT:
+     case TK_NUMBER:
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case TK_NUMBER2:
++#endif
+       save(ls, '\0');
+       return luaZ_buffer(ls->buff);
+     default:
+@@ -102,7 +111,7 @@
+ void luaX_lexerror (LexState *ls, const char *msg, int token) {
+   char buff[MAXSRC];
+   luaO_chunkid(buff, getstr(ls->source), MAXSRC);
+-  msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
++  msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, (LUAI_UACINTEGER) (ls->linenumber), msg);
+   if (token)
+     luaO_pushfstring(ls->L, "%s near " LUA_QS, msg, txtToken(ls, token));
+   luaD_throw(ls->L, LUA_ERRSYNTAX);
+@@ -158,7 +167,7 @@
+ 
+ 
+ 
+-static int check_next (LexState *ls, const char *set) {
++static lu_bool check_next (LexState *ls, const char *set) {
+   if (!strchr(set, ls->current))
+     return 0;
+   save_and_next(ls);
+@@ -173,23 +182,27 @@
+     if (p[n] == from) p[n] = to;
+ }
+ 
+-
+-static void trydecpoint (LexState *ls, SemInfo *seminfo) {
++/* TK_NUMBER (/ TK_NUMBER2) */
++static int trydecpoint (LexState *ls, SemInfo *seminfo) {
+   /* format error: try to update decimal point separator */
+   struct lconv *cv = localeconv();
+   char old = ls->decpoint;
++  int ret;
+   ls->decpoint = (cv ? cv->decimal_point[0] : '.');
+   buffreplace(ls, old, ls->decpoint);  /* try updated decimal separator */
+-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r)) {
++  ret= luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r, NULL);
++  if (!ret) {
+     /* format error with correct decimal point: no more options */
+     buffreplace(ls, ls->decpoint, '.');  /* undo change (for error message) */
+     luaX_lexerror(ls, "malformed number", TK_NUMBER);
+   }
++  return ret;
+ }
+ 
+ 
+-/* LUA_NUMBER */
+-static void read_numeral (LexState *ls, SemInfo *seminfo) {
++/* TK_NUMBER / TK_INT (/TK_NUMBER2) */
++static int read_numeral (LexState *ls, SemInfo *seminfo) {
++  int ret;
+   lua_assert(isdigit(ls->current));
+   do {
+     save_and_next(ls);
+@@ -200,8 +213,9 @@
+     save_and_next(ls);
+   save(ls, '\0');
+   buffreplace(ls, '.', ls->decpoint);  /* follow locale for decimal point */
+-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r))  /* format error? */
+-    trydecpoint(ls, seminfo); /* try to update decimal point separator */
++  ret= luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r, &seminfo->i );
++  if (!ret) return trydecpoint(ls, seminfo); /* try to update decimal point separator */
++  return ret;
+ }
+ 
+ 
+@@ -329,6 +343,7 @@
+ }
+ 
+ 
++/* char / TK_* */
+ static int llex (LexState *ls, SemInfo *seminfo) {
+   luaZ_resetbuffer(ls->buff);
+   for (;;) {
+@@ -400,8 +415,7 @@
+         }
+         else if (!isdigit(ls->current)) return '.';
+         else {
+-          read_numeral(ls, seminfo);
+-          return TK_NUMBER;
++          return read_numeral(ls, seminfo);
+         }
+       }
+       case EOZ: {
+@@ -414,8 +428,7 @@
+           continue;
+         }
+         else if (isdigit(ls->current)) {
+-          read_numeral(ls, seminfo);
+-          return TK_NUMBER;
++          return read_numeral(ls, seminfo);
+         }
+         else if (isalpha(ls->current) || ls->current == '_') {
+           /* identifier or reserved word */
+@@ -449,8 +462,9 @@
+     ls->t = ls->lookahead;  /* use this one */
+     ls->lookahead.token = TK_EOS;  /* and discharge it */
+   }
+-  else
++  else {
+     ls->t.token = llex(ls, &ls->t.seminfo);  /* read next token */
++  }
+ }
+ 
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/llex.h lua-5.1.1-patched/src/llex.h
+--- lua-5.1.1/src/llex.h	2006-03-23 20:23:32.000000000 +0200
++++ lua-5.1.1-patched/src/llex.h	2006-08-29 17:03:40.000000000 +0300
+@@ -30,18 +30,22 @@
+   /* other terminal symbols */
+   TK_CONCAT, TK_DOTS, TK_EQ, TK_GE, TK_LE, TK_NE, TK_NUMBER,
+   TK_NAME, TK_STRING, TK_EOS
++  , TK_INT    /* integer constants */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  , TK_NUMBER2   /* imaginary constants: Ni */ 
++#endif
+ };
+ 
+ /* number of reserved words */
+ #define NUM_RESERVED	(cast(int, TK_WHILE-FIRST_RESERVED+1))
+ 
+ 
+-/* array with token `names' */
+-LUAI_DATA const char *const luaX_tokens [];
+-
+-
++/* SemInfo is a local data structure of 'llex.c', used for carrying a string
++ * or a number. A separate token (TK_*) will tell, how to interpret the data.
++ */      
+ typedef union {
+   lua_Number r;
++  lua_Integer i;
+   TString *ts;
+ } SemInfo;  /* semantics information */
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/llimits.h lua-5.1.1-patched/src/llimits.h
+--- lua-5.1.1/src/llimits.h	2005-12-27 19:12:00.000000000 +0200
++++ lua-5.1.1-patched/src/llimits.h	2006-08-29 15:42:27.000000000 +0300
+@@ -21,6 +21,9 @@
+ 
+ typedef LUAI_MEM l_mem;
+ 
++/* Only for internal functions; for public ABI, use 'int' */
++typedef LUAI_BOOL lu_bool;
++
+ 
+ 
+ /* chars used as small naturals (so that `char' is reserved for characters) */
+@@ -49,6 +52,7 @@
+ 
+ /* result of a `usual argument conversion' over lua_Number */
+ typedef LUAI_UACNUMBER l_uacNumber;
++typedef LUAI_UACINTEGER l_uacInteger;
+ 
+ 
+ /* internal assertions for in-house debugging */
+diff -urN --exclude=.svn lua-5.1.1/src/lmathlib.c lua-5.1.1-patched/src/lmathlib.c
+--- lua-5.1.1/src/lmathlib.c	2005-08-26 20:36:32.000000000 +0300
++++ lua-5.1.1-patched/src/lmathlib.c	2006-09-11 01:07:31.000000000 +0300
+@@ -4,6 +4,8 @@
+ ** See Copyright Notice in lua.h
+ */
+ 
++/* Ref: <http://www.brics.dk/Projects/CoFI/Notes/M-7/index_23.html>
++*/
+ 
+ #include <stdlib.h>
+ #include <math.h>
+@@ -21,79 +23,188 @@
+ #define PI (3.14159265358979323846)
+ #define RADIANS_PER_DEGREE (PI/180.0)
+ 
+-
++#ifdef LUA_NUMBER_MODE_COMPLEX
++# include <complex.h>
++#endif
++/*
++Use of <complex.h> C99 features is preferable for complex arithmetics, for:
++a) keeping the code shorter
++b) handling roundings, special cases etc. in a preferable way
++
++Also, basically all of these functions should have a corresponding feature
++in the Lua math library (unless the implementation is trivial).
++
++extern double complex cacos( double complex );
++extern double complex casin( double complex );
++extern double complex catan( double complex );
++
++extern double complex ccos( double complex );
++extern double complex csin( double complex );
++extern double complex ctan( double complex );
++
++extern double complex cacosh( double complex );
++extern double complex casinh( double complex );
++extern double complex catanh( double complex );
++
++extern double complex ccosh( double complex );
++extern double complex csinh( double complex );
++extern double complex ctanh( double complex );
++
++extern double complex cexp( double complex );
++extern double complex clog( double complex );
++
++extern double cabs( double complex );
++extern double complex cpow( double complex, double complex );
++extern double complex csqrt( double complex );
++
++extern double carg( double complex );
++extern double cimag( double complex );
++extern double complex conj( double complex );
++extern double complex cproj( double complex );
++extern double creal( double complex );
++
++The following function names and the same names suffixed with f or l are reserved for future use, and may be added to the declarations in the <complex.h> header.
++cerf()
++cerfc()
++cexp2()
++cexpm1()
++clog10()
++clog1p()
++clog2()
++clgamma()
++ctgamma()
++*/
+ 
+ static int math_abs (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushnumber(L, cabs(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, fabs(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_sin (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, csin(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, sin(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_sinh (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, csinh(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, sinh(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_cos (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, ccos(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, cos(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_cosh (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, ccosh(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, cosh(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_tan (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, ctan(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, tan(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_tanh (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, ctanh(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, tanh(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_asin (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, casin(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, asin(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_acos (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, cacos(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, acos(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_atan (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, catan(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, atan(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_atan2 (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  /* atan2() not available (meaningful?) for complex numbers */
++#endif
+   lua_pushnumber(L, atan2(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
+   return 1;
+ }
+ 
+ static int math_ceil (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_Complex v= luaL_checkcomplex(L, 1);
++  lua_pushcomplex(L, ceil(creal(v)) + ceil(cimag(v))*I);
++#else
+   lua_pushnumber(L, ceil(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_floor (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_Complex v= luaL_checkcomplex(L, 1);
++  lua_pushcomplex(L, floor(creal(v)) + floor(cimag(v))*I);
++#else
+   lua_pushnumber(L, floor(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_fmod (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  /* TBD: for real numbers only? */
++#endif
+   lua_pushnumber(L, fmod(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
+   return 1;
+ }
+ 
+ static int math_modf (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  /* TBD: for real numbers only? */
++#endif
+   double ip;
+   double fp = modf(luaL_checknumber(L, 1), &ip);
+   lua_pushnumber(L, ip);
+@@ -102,27 +213,48 @@
+ }
+ 
+ static int math_sqrt (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, csqrt(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, sqrt(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_pow (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, cpow(luaL_checkcomplex(L,1), luaL_checkcomplex(L,2)));
++#else
+   lua_pushnumber(L, pow(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
++#endif
+   return 1;
+ }
+ 
+ static int math_log (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, clog(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, log(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_log10 (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  /* Not in standard <complex.h> , but easy to calculate: log_a(x) = log_b(x) / log_b(a) */
++  lua_pushcomplex(L, clog(luaL_checkcomplex(L,1)) / log(10));
++#else
+   lua_pushnumber(L, log10(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+ static int math_exp (lua_State *L) {
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  lua_pushcomplex(L, cexp(luaL_checkcomplex(L,1)));
++#else
+   lua_pushnumber(L, exp(luaL_checknumber(L, 1)));
++#endif
+   return 1;
+ }
+ 
+@@ -211,6 +343,35 @@
+   return 0;
+ }
+ 
++/* C99 complex functions, not covered above. */
++/* acosh, asinh, atanh not added, since also Lua main math lib could have those. */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++static int math_arg (lua_State *L) {
++  lua_pushnumber(L, carg(luaL_checkcomplex(L,1)));
++  return 1;
++}
++
++static int math_imag (lua_State *L) {
++  lua_pushnumber(L, cimag(luaL_checkcomplex(L,1)));
++  return 1;
++}
++
++static int math_real (lua_State *L) {
++  lua_pushnumber(L, creal(luaL_checkcomplex(L,1)));
++  return 1;
++}
++
++static int math_conj (lua_State *L) {
++  lua_pushcomplex(L, conj(luaL_checkcomplex(L,1)));
++  return 1;
++}
++
++static int math_proj (lua_State *L) {
++  lua_pushcomplex(L, cproj(luaL_checkcomplex(L,1)));
++  return 1;
++}
++#endif
++
+ 
+ static const luaL_Reg mathlib[] = {
+   {"abs",   math_abs},
+@@ -241,6 +402,13 @@
+   {"sqrt",  math_sqrt},
+   {"tanh",   math_tanh},
+   {"tan",   math_tan},
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  {"arg",   math_arg},
++  {"imag",  math_imag},
++  {"real",  math_real},
++  {"conj",  math_conj},
++  {"proj",  math_proj},
++#endif
+   {NULL, NULL}
+ };
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/lnum.c lua-5.1.1-patched/src/lnum.c
+--- lua-5.1.1/src/lnum.c	1970-01-01 02:00:00.000000000 +0200
++++ lua-5.1.1-patched/src/lnum.c	2006-11-02 09:49:28.000000000 +0200
+@@ -0,0 +1,324 @@
++/*
++** $Id: lnum.c,v ... $
++** Internal Number model - pure double or: int32|64 + float/double
++** Copyright ...
++*/
++
++#include <stdlib.h>
++#include <math.h>
++#include <ctype.h>
++#include <string.h>
++#include <stdio.h>
++
++#define lnum_c
++#define LUA_CORE
++
++#include "lua.h"
++#include "llex.h"
++#include "lnum.h"
++
++/*
++** lua_real2str converts a (non-complex) number to a string.
++** lua_str2real converts a string to a (non-complex) number.
++** LUAI_MAXNUMBER2STR is size of buffer needed for the above.
++*/
++#define lua_real2str(s,n)	sprintf((s), LUA_NUMBER_FMT, (n))
++#define lua_str2real(s,p)	strtod((s), (p))
++
++#define lua_integer2str(s,v) \
++    sprintf((s), "%" LUA_INTFRMLEN "d", (LUA_INTFRM_T) (v))
++
++/* 's' is expected to be LUAI_MAXNUMBER2STR long (enough for any number)
++*/
++lu_bool luaO_num2buf( char *s, const TValue *o )
++{
++  if (!ttisnumber(o)) return 0;
++
++#ifdef LUA_TINT
++  /* Reason to handle integers differently is not only speed,
++     but accuracy as well. We want to make any integer tostring()
++     without roundings, at all.
++  */
++  if (ttisinteger(o))
++    lua_integer2str( s, ivalue(o) );
++  else {
++# ifdef LUA_NUMBER_MODE_COMPLEX
++    lua_Number n2= nvalue2_fast(o);
++# endif
++    lua_real2str(s, nvalue_fast(o));
++# ifdef LUA_NUMBER_MODE_COMPLEX
++    if (n2!=0) {   /* Postfix with +-Ni */
++      lu_bool re0= (nvalue_fast(o) == 0);
++      char *s2= re0 ? s : strchr(s,'\0'); 
++      lua_assert(s2);
++      if ((!re0) && (n2>0)) *s2++= '+';
++      lua_real2str( s2, n2 );
++      strcat(s2,"i");
++    }
++# endif
++  }
++#else
++  lua_real2str(s, nvalue(o));
++#endif
++  return 1;
++}
++
++/* Note: Regular Lua (using 'strtod()') allow 0x+hex but not 0+octal.
++ *       'strtoul[l]()' functions allow both if using the "autobase" 0.
++ *
++ * Full hex range (0 .. 0xffff..) is stored as integers, not to lose any bits.
++ * Numerically, 0xffff.. will be -1, just be aware of this! Dec values are
++ * taken only for the signed range (rest handled as floating point, and may
++ * lose accuracy).
++ */
++static lu_bool luaO_str2i (const char *s, lua_Integer *res) {
++  char *endptr;
++  lua_str2ul_t v= lua_str2ul(s, &endptr, 10);
++  if (endptr == s) return 0;  /* conversion failed */
++  if (v==0 && *endptr=='x')
++    v= lua_str2ul(s, &endptr, 16);  /* retry, as hex */
++  else if (v > LUA_INTEGER_MAX) 
++	return 0;	/* does not fit in signed range */
++
++  if (*endptr != '\0') {
++    while (isspace(cast(unsigned char, *endptr))) endptr++;
++    if (*endptr != '\0') return 0;  /* invalid trail */
++  }
++  *res= (lua_Integer)v;
++  return 1;
++}
++
++/* 0 / TK_NUMBER / TK_INT (/ TK_NUMBER2) */
++int luaO_str2d (const char *s, lua_Number *result, lua_Integer *res2) {
++  char *endptr;
++  int ret= TK_NUMBER;
++  /* Check integers first, if caller is allowing. If 'res2'==NULL,
++   * we know they're only looking for floating point. */
++  if (res2 && luaO_str2i(s,res2))
++    return TK_INT;
++  *result = lua_str2real(s, &endptr);
++  if (endptr == s) return 0;  /* conversion failed */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  if (*endptr == 'i') { endptr++; ret= TK_NUMBER2; }
++#endif
++  if (*endptr == '\0') return ret;  /* most common case */
++  while (isspace(cast(unsigned char, *endptr))) endptr++;
++  if (*endptr != '\0') return 0;  /* invalid trailing characters? */
++  return ret;
++}
++
++
++/* Functions for finding out, when integer operations remain in range
++ * (and doing them).
++ */
++lu_bool try_addint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  lua_Integer v= ib+ic; /* may overflow */
++  if (ib>0 && ic>0)      { if (v < 0) return 0; /*overflow, use floats*/ }
++  else if (ib<0 && ic<0) { if (v >= 0) return 0; }
++  *r= v;
++  return 1;
++}
++
++lu_bool try_subint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  lua_Integer v= ib-ic; /* may overflow */
++  if (ib>=0 && ic<0)     { if (v < 0) return 0; /*overflow, use floats*/ }
++  else if (ib<0 && ic>0) { if (v >= 0) return 0; }
++  *r= v;
++  return 1;
++}
++
++lu_bool try_mulint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  /* If either is -2^31, multiply with anything but 0,1 would be out or range.
++   * 0,1 will go through the float route, but will fall back to integers
++   * eventually (no accuracy lost, so no need to check).
++   * Also, anything causing -2^31 result (s.a. -2*2^30) will take the float
++   * route, but later fall back to integer without accuracy loss. :)
++   */
++  if (ib!=LUA_INTEGER_MIN && ic!=LUA_INTEGER_MIN) {
++    lua_Integer b= abs(ib), c= abs(ic);
++    if ( (ib==0) || (LUA_INTEGER_MAX/b > c) ||
++                   ((LUA_INTEGER_MAX/b == c) && (LUA_INTEGER_MAX%b == 0)) ) {
++      *r= ib*ic;  /* no overflow */
++      return 1;
++    }
++  }
++  return 0;
++}
++
++lu_bool try_divint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  /* -2^31/N: leave to float side (either the division causes non-integer results,
++   *          or fallback to integer through float calculation, but without accuracy
++   *          lost (N=2,4,8,..,256 and N=2^30,2^29,..2^23).
++   * N/-2^31: leave to float side (always non-integer results or 0 or +1)
++   * N/0:     leave to float side, to give an error
++   *
++   * Note: We _can_ use ANSI C mod here, even on negative values, since
++   *       we only test for == 0 (the sign would be implementation dependent).
++   */
++  if (ic!=0 && ib!=LUA_INTEGER_MIN && ic!=LUA_INTEGER_MIN) {
++    if (ib%ic == 0) { *r= ib/ic; return 1; }
++  }
++  return 0;
++}
++
++lu_bool try_modint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  if (ic!=0) {
++    /* ANSI C can be trusted when b%c==0, or when values are non-negative. 
++     * b - (floor(b/c) * c)
++     *   -->
++     * + +: b - (b/c) * c (b % c can be used)
++     * - -: b - (b/c) * c (b % c could work, but not defined by ANSI C)
++     * 0 -: b - (b/c) * c (=0, b % c could work, but not defined by ANSI C)
++     * - +: b - (b/c-1) * c (when b!=-c)
++     * + -: b - (b/c-1) * c (when b!=-c)
++     *
++     * o MIN%MIN ends up 0, via overflow in calcs but that does not matter.
++     * o MIN%MAX ends up MAX-1 (and other such numbers), also after overflow,
++     *   but that does not matter, results do.
++     */
++    lua_Integer v= ib % ic;
++    if ( v!=0 && (ib<0 || ic<0) ) {
++      v= ib - ((ib/ic) - ((ib<=0 && ic<0) ? 0:1)) * ic;
++    }      
++    /* Result should always have same sign as 2nd argument. (PIL2) */
++    lua_assert( (v<0) ? (ic<0) : (v>0) ? (ic>0) : 1 );
++    *r= v;
++    return 1;
++  }
++  return 0;  /* let float side return NaN */
++}
++
++lu_bool try_powint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
++  /* Fallback to floats would not hurt (no accuracy lost) but we can do
++   * some common cases (2^N where N=[0..30]) for speed.
++   */
++  if (ib==2 && ic>=0 && ic <= 30) {
++    *r= 1<<ic;   /* 1,2,4,...2^30 */
++    return 1;
++  }
++  return 0;
++}
++
++lu_bool try_unmint( lua_Integer *r, lua_Integer ib ) {
++  /* Negating -2^31 leaves the range. */
++  if ( ib != LUA_INTEGER_MIN )  
++    { *r= -ib; return 1; }
++  return 0;
++}
++
++
++#ifdef LUA_NUMBER_MODE_COMPLEX
++/* Complex unary minus: -(a+bi) = -a-bi
++ */
++void luai_vectunm( lua_Number a, lua_Number b, lua_Number *ra, lua_Number *rb )
++{
++    lua_assert(ra && rb);
++    *ra= -a; *rb= -b;
++}
++
++/* Complex addition: (a+bi)+(c+di) = (a+c)+(b+d)i
++ */
++void luai_vectadd( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++    lua_assert(ra && rb);
++    *ra= a+c; *rb= b+d;
++}
++
++/* Complex substraction: (a+bi)-(c+di) = (a-c)+(b-d)i
++ */
++void luai_vectsub( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++    lua_assert(ra && rb);
++    *ra= a-c; *rb= b-d;
++}
++
++/* Complex multiplication: (a+bi)*(c+di) = (ac-bd)+(cb+ad)i
++ */
++void luai_vectmul( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++    lua_assert(ra && rb);
++    *ra= a*c-b*d; *rb= c*b+a*d;
++}
++
++/* Complex division
++ * (a+bi)/(c+di) = ((a+bi)(c-di)) / (c^2+d^2)
++ */
++void luai_vectdiv( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++    lua_Number c2d2= c*c + d*d;
++    lua_assert( ra && rb );
++    luai_vectmul(a,b,c,-d,ra,rb);
++    *ra /= c2d2;
++    *rb /= c2d2;
++}
++
++/* Complex modulus:
++ * 
++ * TBD: Not sure if there's a standard way to do this?  Anyways, in the ways
++ *      Lua is using '%' for range rounding, this behaviour should be practical?
++ */
++void luai_vectmod( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++    lua_assert(ra && rb);
++    *ra= luai_nummod(a,c); *rb= luai_nummod(b,d);
++}
++
++
++/* Complex power
++ * [(a+bi)^(c+di)] = (r^c) * exp(-d*t) * cos(c*t + d*ln(r)) +
++ *                 = (r^c) * exp(-d*t) * sin(c*t + d*ln(r)) *i
++ * r = sqrt(a^2+b^2), t = arctan( b/a )
++ * 
++ * References/credits: <http://home.att.net/~srschmitt/complexnumbers.html>
++ * Could also be calculated using: x^y = exp(ln(x)*y)
++ */
++void luai_vectpow( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb )
++{
++/* Better to use <complex.h> to avoid calculation inaccuracies: (1i)^2 should be -1, sharp. :)
++*
++* HA!  Even cpow() does it with exact same inaccuracies:
++*       > print( (1i)^2 )
++*       -1+1.2246467991474e-16i
++*/
++    lua_assert( ra && rb );
++
++    if (b==0 && d==0) {     /* a^c (real) */
++      *ra= luai_numpow(a,b); *rb= 0; return;
++    } 
++
++    if (b!=0 && d==0 && floor(c)==c && c!=0) { /* (a+bi)^N, N = { +-1,+-2, ... } */
++      lua_Number k= luai_numpow( sqrt(a*a + b*b), c );
++      lua_Number cos_z, sin_z;
++
++      /* Situation depends upon c (N) in the following manner:
++       * 
++       * N%4==0                                => cos(c*t)=1, sin(c*t)=0
++       * (N*sign(b))%4==1 or (N*sign(b))%4==-3 => cos(c*t)=0, sin(c*t)=1
++       * N%4==2 or N%4==-2                     => cos(c*t)=-1, sin(c*t)=0
++       * (N*sign(b))%4==-1 or (N*sign(b))%4==3 => cos(c*t)=0, sin(c*t)=-1
++       */
++      switch( (abs(c)%4) * (c<0 ? -1:1) * (b<0 ? -1:1) ) {
++        case 0:             cos_z=1, sin_z=0; break;
++        case 2: case -2:    cos_z=-1, sin_z=0; break;
++        case 1: case -3:    cos_z=0, sin_z=1; break;
++        case 3: case -1:    cos_z=0, sin_z=-1; break;
++        default:            lua_assert(0);
++      }
++      *ra= k * cos_z;
++      *rb= k * sin_z;
++      return;
++    }
++
++    lua_Complex v= cpow( a+b*I, c+d*I );
++    *ra= creal(v);
++    *rb= cimag(v);
++}
++#endif
++
++
+diff -urN --exclude=.svn lua-5.1.1/src/lnum.h lua-5.1.1-patched/src/lnum.h
+--- lua-5.1.1/src/lnum.h	1970-01-01 02:00:00.000000000 +0200
++++ lua-5.1.1-patched/src/lnum.h	2006-11-02 10:02:29.000000000 +0200
+@@ -0,0 +1,58 @@
++/*
++** $Id: lnum.h,v ... $
++** Internal Number model
++** See Copyright Notice in lua.h
++*/
++
++#ifndef lnum_h
++#define lnum_h
++
++#include <math.h>
++
++#include "lobject.h"
++
++
++/*
++** The luai_num* macros define the primitive operations over numbers.
++*/
++/* AK 30-Aug-05: Is there actually any real use of defining these? */
++#define luai_numadd(a,b)	((a)+(b))
++#define luai_numsub(a,b)	((a)-(b))
++#define luai_nummul(a,b)	((a)*(b))
++#define luai_numdiv(a,b)	((a)/(b))
++#define luai_nummod(a,b)	((a) - floor((a)/(b))*(b))
++#define luai_numpow(a,b)	(pow(a,b))
++#define luai_numunm(a)		(-(a))
++#define luai_numeq(a,b)	    ((a)==(b))
++#define luai_numlt(a,b)	    ((a)<(b))
++#define luai_numle(a,b)	    ((a)<=(b))
++#define luai_numisnan(a)	(!luai_numeq((a), (a)))
++
++#ifdef LUA_NUMBER_MODE_COMPLEX
++void luai_vectunm( lua_Number a, lua_Number b, lua_Number *ra, lua_Number *rb );
++void luai_vectadd( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++void luai_vectsub( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++void luai_vectmul( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++void luai_vectmod( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++void luai_vectdiv( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++void luai_vectpow( lua_Number a, lua_Number b, lua_Number c, lua_Number d,
++                   lua_Number *ra, lua_Number *rb );
++#endif
++
++lu_bool try_addint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_subint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_mulint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_divint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_modint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_powint( lua_Integer *r, lua_Integer ib, lua_Integer ic );
++lu_bool try_unmint( lua_Integer *r, lua_Integer ib );
++
++LUAI_FUNC int luaO_str2d (const char *s, lua_Number *res1, lua_Integer *res2);
++lu_bool luaO_num2buf( char *s, const TValue *o );
++
++#endif
+diff -urN --exclude=.svn lua-5.1.1/src/lnum_config.h lua-5.1.1-patched/src/lnum_config.h
+--- lua-5.1.1/src/lnum_config.h	1970-01-01 02:00:00.000000000 +0200
++++ lua-5.1.1-patched/src/lnum_config.h	2006-11-02 10:01:03.000000000 +0200
+@@ -0,0 +1,175 @@
++/*
++** $Id: lnum_config.h,v ... $
++** Internal Number model
++** See Copyright Notice in lua.h
++*/
++
++#ifndef lnum_config_h
++#define lnum_config_h
++
++/**
++** LUA_NUMBER_MODE_LDOUBLE_INT64    long double precision FP (80+), 64-bit integers
++** LUA_NUMBER_MODE_DOUBLE (default) double precision for both FP and integers (32-bit)
++** LUA_NUMBER_MODE_DOUBLE_INT32     double precision FP, 32-bit integers (if no FPU)
++** LUA_NUMBER_MODE_DOUBLE_INT64     double precision FP, 64-bit integers
++** LUA_NUMBER_MODE_FLOAT            single precision for both FP and integers (23-bit)
++** LUA_NUMBER_MODE_FLOAT_INT32      single precision FP, 32-bit integers
++** LUA_NUMBER_MODE_FLOAT_INT64      single precision FP, 64-bit integers
++** LUA_NUMBER_MODE_BCD_INT32        Binary Coded Decimals, 32-bit integer optimized
++** LUA_NUMBER_MODE_COMPLEX          Complex (a+bi) number mode, both double.
++**/
++#if defined(LUA_NUMBER_MODE_LDOUBLE_INT64)
++# define LUA_NUMBER_MODE " (long double+int64)"
++#elif defined(LUA_NUMBER_MODE_DOUBLE)
++# define LUA_NUMBER_MODE ""
++#elif defined(LUA_NUMBER_MODE_DOUBLE_INT32)
++# define LUA_NUMBER_MODE " (double+int32)"
++#elif defined(LUA_NUMBER_MODE_DOUBLE_INT64)
++# define LUA_NUMBER_MODE " (double+int64)"
++#elif defined(LUA_NUMBER_MODE_FLOAT)
++# define LUA_NUMBER_MODE " (float)"
++#elif defined(LUA_NUMBER_MODE_FLOAT_INT32)
++# define LUA_NUMBER_MODE " (float+int32)"
++#elif defined(LUA_NUMBER_MODE_FLOAT_INT64)
++# define LUA_NUMBER_MODE " (float+int64)"
++#elif defined(LUA_NUMBER_MODE_BCD_INT32)
++# define LUA_NUMBER_MODE " (BCD)"
++#elif defined(LUA_NUMBER_MODE_COMPLEX)
++# define LUA_NUMBER_MODE " (complex)"
++#else
++# error "Number mode undefined (check luaconf.h)"
++#endif
++
++/*
++** LUA_NUMBER is the type of floating point number in Lua ('float' or 'double')
++** LUA_NUMBER_SCAN is the format for reading numbers.
++** LUA_NUMBER_FMT is the format for writing numbers.
++*/
++#if (defined LUA_NUMBER_MODE_LDOUBLE_INT64)
++# define LUA_NUMBER long double
++# define LUA_NUMBER_SCAN    "%Lg"
++# define LUA_NUMBER_FMT     "%.14Lg"
++#elif (defined LUA_NUMBER_MODE_FLOAT_INT32) || (defined LUA_NUMBER_MODE_FLOAT_INT64) \
++   || (defined LUA_NUMBER_MODE_FLOAT)
++# define LUA_NUMBER float
++# define LUA_NUMBER_SCAN    "%f"
++# define LUA_NUMBER_FMT     "%g"  
++#else
++# define LUA_NUMBER	double
++# define LUA_NUMBER_SCAN    "%lf"
++# define LUA_NUMBER_FMT     "%.14g"
++# define _LUA_DOUBLE_
++#endif
++
++/* LUAI_MAXNUMBER2STR: size of a buffer fitting any number->string result.
++ *  normal:  19 (16 digits, sign, point, and \0)
++ *  int64:   21 (19 digits, sign, and \0)
++ *  complex: double the size (18+18+'i'+\0)
++ *
++ * Note: RAISE THIS if changing LUA_NUMBER_FMT to more precision!
++ */
++#ifndef LUA_NUMBER_MODE_COMPLEX
++# define LUAI_MAXNUMBER2STR 22
++#else
++# define LUAI_MAXNUMBER2STR 44
++#endif
++
++/*
++** LUA_INTEGER is the integer type used by lua_pushinteger/lua_tointeger/lua_isinteger.
++** It needs to be defined even if all-floating point number modes were used
++** (LUA_NUMBER_MODE_DOUBLE, LUA_NUMBER_MODE_COMPLEX).
++**
++** LUA_INTFRMLEN is the length modifier for integer conversions in 'string.format'.
++** LUA_INTFRM_T is the integer type correspoding to the previous length modifier.
++*/
++#if defined(LUA_NUMBER_MODE_LDOUBLE_INT64) || defined(LUA_NUMBER_MODE_DOUBLE_INT64) \
++    || defined(LUA_NUMBER_MODE_FLOAT_INT64) || defined(LUA_USELONGLONG)
++# define LUA_INTEGER	long long
++# define lua_str2ul     strtoull
++# define lua_str2ul_t   unsigned long long
++# define LUA_INTFRMLEN	"ll"
++# define LUA_INTFRM_T	long long
++# define LUA_INTEGER_MAX 0x7fffffffffffffffLL       /* 2^63-1 */ 
++# define LUA_INTEGER_MIN (-LUA_INTEGER_MAX - 1LL)   /* -2^63 */
++# define _LUA_INT64_
++#else
++/* On most machines, ptrdiff_t gives a good choice between int or long. */
++# define LUA_INTEGER    ptrdiff_t
++# define lua_str2ul     strtoul
++# define lua_str2ul_t   unsigned  /* 'unsigned ptrdiff_t' is invalid */
++# define LUA_INTFRMLEN	"l"
++# define LUA_INTFRM_T	long
++# define LUA_INTEGER_MAX 0x7FFFFFFF             /* 2^31-1 */
++# define LUA_INTEGER_MIN (-LUA_INTEGER_MAX -1)  /* -2^31 */
++#endif
++
++
++/*
++@@ lua_number2int is a macro to convert lua_Number to int.
++@@ lua_number2integer is a macro to convert lua_Number to lua_Integer.
++** CHANGE them if you know a faster way to convert a lua_Number to
++** int (with any rounding method and without throwing errors) in your
++** system. In Pentium machines, a naive typecast from double to int
++** in C is extremely slow, so any alternative is worth trying.
++*/
++
++/* On a Pentium, resort to a trick */
++#if defined(_LUA_DOUBLE_) && !defined(LUA_ANSI) && !defined(__SSE2__) && \
++    (defined(__i386) || defined (_M_IX86) || defined(__i386__))
++
++/* On a Microsoft compiler, use assembler */
++# if defined(_MSC_VER)
++#  define lua_number2int(i,d)   __asm fld d   __asm fistp i
++# else
++
++/* the next trick should work on any Pentium, but sometimes clashes
++   with a DirectX idiosyncrasy */
++union luai_Cast { double l_d; long l_l; };
++#  define lua_number2int(i,d) \
++  { volatile union luai_Cast u; u.l_d = (d) + 6755399441055744.0; (i) = u.l_l; }
++# endif
++
++# ifndef _LUA_INT64_
++#  define lua_number2integer    lua_number2int
++# endif
++
++/* this option always works, but may be slow */
++#else
++# define lua_number2int(i,d)        ((i)=(int)(d))
++#endif
++
++/* TBD: the following line may be compiler specific, and is controversial. Some compilers
++ *      (OS X gcc 4.0?) may choke on double->long long conversion (since it can lose
++ *      precision; double does not have 63-bit mantissa). Others do require 'long long'
++ *      there.  TO BE TESTED ON MULTIPLE SYSTEMS, AND COMPILERS.  -- AKa 12-Oct-06
++ */
++ /* define lua_number2integer(i,d)   { int v; lua_number2int(v,d); (i)=(lua_Integer)(v); }
++ */
++#ifndef lua_number2integer
++# define lua_number2integer(i,d)    ((i)=(lua_Integer)(d))
++#endif
++
++
++/*
++** LUA_COMPLEX is the type of complex number in Lua (needs C99)
++*/
++#ifdef LUA_NUMBER_MODE_COMPLEX
++# define LUA_COMPLEX double complex
++#endif
++
++
++/*
++** LUAI_UACNUMBER is the result of an 'usual argument conversion' over a number.
++** LUAI_UACINTEGER the same, over an integer.
++*/
++#define LUAI_UACNUMBER	double
++
++/* TBD: lua_sprintf("%d",v) has problems in 64 bit operation; can this solve them?
++*/
++#define LUAI_UACINTEGER LUA_INTFRM_T
++
++
++#undef _LUA_INT64_
++#undef _LUA_DOUBLE_
++#endif
++
+diff -urN --exclude=.svn lua-5.1.1/src/loadlib.c lua-5.1.1-patched/src/loadlib.c
+--- lua-5.1.1/src/loadlib.c	2006-04-10 21:27:23.000000000 +0300
++++ lua-5.1.1-patched/src/loadlib.c	2006-10-22 18:40:00.000000000 +0300
+@@ -116,7 +116,7 @@
+       NULL, error, 0, buffer, sizeof(buffer), NULL))
+     lua_pushstring(L, buffer);
+   else
+-    lua_pushfstring(L, "system error %d\n", error);
++    lua_pushfstring(L, "system error %d\n", (LUAI_UACINTEGER)error);
+ }
+ 
+ static void ll_unloadlib (void *lib) {
+@@ -329,7 +329,7 @@
+ */
+ 
+ 
+-static int readable (const char *filename) {
++static lu_bool readable (const char *filename) {
+   FILE *f = fopen(filename, "r");  /* try to open file */
+   if (f == NULL) return 0;  /* open failed */
+   fclose(f);
+@@ -410,7 +410,7 @@
+ }
+ 
+ 
+-static int loader_Croot (lua_State *L) {
++static lu_bool loader_Croot (lua_State *L) {
+   const char *funcname;
+   const char *filename;
+   const char *name = luaL_checkstring(L, 1);
+diff -urN --exclude=.svn lua-5.1.1/src/lobject.c lua-5.1.1-patched/src/lobject.c
+--- lua-5.1.1/src/lobject.c	2006-02-10 19:43:52.000000000 +0200
++++ lua-5.1.1-patched/src/lobject.c	2006-09-11 01:07:31.000000000 +0300
+@@ -21,7 +21,8 @@
+ #include "lstate.h"
+ #include "lstring.h"
+ #include "lvm.h"
+-
++#include "llex.h"
++#include "lnum.h"
+ 
+ 
+ const TValue luaO_nilobject_ = {{NULL}, LUA_TNIL};
+@@ -69,13 +70,22 @@
+ }
+ 
+ 
+-int luaO_rawequalObj (const TValue *t1, const TValue *t2) {
++lu_bool luaO_rawequalObj (const TValue *t1, const TValue *t2) {
+   if (ttype(t1) != ttype(t2)) return 0;
+   else switch (ttype(t1)) {
+     case LUA_TNIL:
+       return 1;
+     case LUA_TNUMBER:
++#ifdef LUA_TINT
++# ifdef LUA_NUMBER_MODE_COMPLEX
++      if (!luai_numeq( nvalue2_fast(t1), nvalue2_fast(t2) )) return 0;
++# endif
++      return luai_numeq(nvalue_fast(t1), nvalue_fast(t2));
++    case LUA_TINT:
++      return ivalue(t1) == ivalue(t2);
++#else
+       return luai_numeq(nvalue(t1), nvalue(t2));
++#endif
+     case LUA_TBOOLEAN:
+       return bvalue(t1) == bvalue(t2);  /* boolean true must be 1 !! */
+     case LUA_TLIGHTUSERDATA:
+@@ -86,21 +96,6 @@
+   }
+ }
+ 
+-
+-int luaO_str2d (const char *s, lua_Number *result) {
+-  char *endptr;
+-  *result = lua_str2number(s, &endptr);
+-  if (endptr == s) return 0;  /* conversion failed */
+-  if (*endptr == 'x' || *endptr == 'X')  /* maybe an hexadecimal constant? */
+-    *result = cast_num(strtoul(s, &endptr, 16));
+-  if (*endptr == '\0') return 1;  /* most common case */
+-  while (isspace(cast(unsigned char, *endptr))) endptr++;
+-  if (*endptr != '\0') return 0;  /* invalid trailing characters? */
+-  return 1;
+-}
+-
+-
+-
+ static void pushstr (lua_State *L, const char *str) {
+   setsvalue2s(L, L->top, luaS_new(L, str));
+   incr_top(L);
+@@ -131,7 +126,12 @@
+         break;
+       }
+       case 'd': {
+-        setnvalue(L->top, cast_num(va_arg(argp, int)));
++#if 1
++        //in 5.1.1: setivalue(L->top, va_arg(argp, int));
++        setivalue(L->top, (lua_Integer) va_arg(argp, l_uacInteger));
++#else
++        setivalue(L->top, va_arg(argp, int));
++#endif
+         incr_top(L);
+         break;
+       }
+diff -urN --exclude=.svn lua-5.1.1/src/lobject.h lua-5.1.1-patched/src/lobject.h
+--- lua-5.1.1/src/lobject.h	2006-01-18 13:37:34.000000000 +0200
++++ lua-5.1.1-patched/src/lobject.h	2006-09-11 01:07:31.000000000 +0300
+@@ -17,7 +17,11 @@
+ 
+ 
+ /* tags for values visible from Lua */
+-#define LAST_TAG	LUA_TTHREAD
++#if defined(LUA_TINT) && (LUA_TINT > LUA_TTHREAD)
++# define LAST_TAG   LUA_TINT
++#else
++# define LAST_TAG	LUA_TTHREAD
++#endif
+ 
+ #define NUM_TAGS	(LAST_TAG+1)
+ 
+@@ -56,10 +60,27 @@
+ /*
+ ** Union of all Lua values
+ */
++/* Number mode invariants:
++   LUA_TINT: any integer fitting in 'lua_Integer' is _always_ carried in .i,
++             never in .n
++   complex: same as above for .i, but _only_ for real integers. All complex
++            numbers use (n,img.n) fields, even if real part is integer
++            (this is to leave LUA_TINT type for good integer optimization,
++            array indices, for loop counters)
++   BCD: not using .n at all, .i for integers and others as strings
++*/            
+ typedef union {
+   GCObject *gc;
+   void *p;
++#ifndef LUA_NUMBER_MODE_BCD
+   lua_Number n;
++#endif
++#ifdef LUA_TINT
++  lua_Integer i;
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++  struct { lua_Number _,n; } img;
++#endif
+   int b;
+ } Value;
+ 
+@@ -77,7 +98,17 @@
+ 
+ /* Macros to test type */
+ #define ttisnil(o)	(ttype(o) == LUA_TNIL)
+-#define ttisnumber(o)	(ttype(o) == LUA_TNUMBER)
++#ifdef LUA_TINT
++# define ttisinteger(o) (ttype(o) == LUA_TINT)
++# define ttisnumber(o) ((ttype(o) == LUA_TINT) || (ttype(o) == LUA_TNUMBER))
++  /* 'ttisnumber_raw()' for non-int32 numbers (gives FALSE on int32's) */
++# define ttisnumber_raw(o)	(ttype(o) == LUA_TNUMBER)
++#else
++# define ttisnumber(o)	(ttype(o) == LUA_TNUMBER)
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++# define ttiscomplex(o) ((ttype(o) == LUA_TNUMBER) && (nvalue2_fast(o)!=0))
++#endif
+ #define ttisstring(o)	(ttype(o) == LUA_TSTRING)
+ #define ttistable(o)	(ttype(o) == LUA_TTABLE)
+ #define ttisfunction(o)	(ttype(o) == LUA_TFUNCTION)
+@@ -90,7 +121,30 @@
+ #define ttype(o)	((o)->tt)
+ #define gcvalue(o)	check_exp(iscollectable(o), (o)->value.gc)
+ #define pvalue(o)	check_exp(ttislightuserdata(o), (o)->value.p)
+-#define nvalue(o)	check_exp(ttisnumber(o), (o)->value.n)
++
++#ifdef LUA_TINT
++# define ttype2(o)  ( ttype(o) == LUA_TINT ? LUA_TNUMBER : ttype(o) )
++#else
++# define ttype2 ttype
++#endif
++
++/* Complex numbers _always_ use LUA_TINT as well (for loop optimization etc.)
++ * LUA_TINT/LUA_TNUMBER applies to the non-imaginary value; imaginary value is always floating point.
++ * This implies: sizeof(lua_Number) must be >= sizeof(lua_Integer) (no float+int64 :).
++ */
++#ifdef LUA_TINT
++# define ivalue(o)	check_exp( ttype(o)==LUA_TINT, (o)->value.i )
++# define nvalue(o)	check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? cast_num((o)->value.i) : (o)->value.n )
++# define nvalue_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.n )   
++# ifdef LUA_NUMBER_MODE_COMPLEX
++#  define nvalue2(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? 0 : (o)->value.img.n ) 
++#  define nvalue2_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.img.n ) 
++# endif
++#else
++# define nvalue(o)	check_exp(ttisnumber(o), (o)->value.n)
++# define ivalue(o) cast(int,nvalue(o))
++#endif
++
+ #define rawtsvalue(o)	check_exp(ttisstring(o), &(o)->value.gc->ts)
+ #define tsvalue(o)	(&rawtsvalue(o)->tsv)
+ #define rawuvalue(o)	check_exp(ttisuserdata(o), &(o)->value.gc->u)
+@@ -116,8 +170,79 @@
+ /* Macros to set values */
+ #define setnilvalue(obj) ((obj)->tt=LUA_TNIL)
+ 
+-#define setnvalue(obj,x) \
+-  { TValue *i_o=(obj); i_o->value.n=(x); i_o->tt=LUA_TNUMBER; }
++#ifdef LUA_TINT
++# ifdef LUA_NUMBER_MODE_COMPLEX
++#  define _SET_N2_(obj,v) ((obj)->value.img.n=(v))
++# else
++#  define _SET_N2_(obj,v)
++# endif
++
++# ifdef INLINE
++    INLINE void setivalue( TValue *obj, lua_Integer x )
++      { obj->value.i=x; obj->tt=LUA_TINT; 
++        _SET_N2_(obj,-999);  /* DEBUG: not needed; helps debug to have nonzero */
++      }
++
++  /* Note: The casting to 'lua_Integer' and then checking for equality
++   *       simultaneously checks _both_ no fraction _and_ valid range.
++   */
++    INLINE void setnvalue( TValue *obj, lua_Number x )
++      {
++      lua_number2integer(obj->value.i,x);  /*optimized*/
++      if (x==obj->value.i) obj->tt=LUA_TINT;
++      else { obj->value.n=x; obj->tt=LUA_TNUMBER; }
++      _SET_N2_(obj,0);
++      }
++
++    INLINE void setnvalue2( TValue *obj, lua_Number x, lua_Number y )
++      {
++#  ifdef LUA_NUMBER_MODE_COMPLEX
++      if (y==0) setnvalue(obj,x);   /* may use .i */
++      else { obj->value.n=x; obj->value.img.n=y; obj->tt=LUA_TNUMBER; }
++#  else
++      lua_number2integer(obj->value.i,x);  /*optimized*/
++      if (x==obj->value.i) obj->tt=LUA_TINT;
++      else { obj->value.n=x; obj->tt=LUA_TNUMBER; }
++#  endif
++      }
++# else
++    /* Poor, old ANSI C.. (must not have side effects, 'x' may be expression)
++     */
++#  define setivalue(obj,x) \
++      do { TValue *i_o=(obj); i_o->value.i=(x); i_o->tt=LUA_TINT; \
++      _SET_N2_(i_o,-999); /* DEBUG not used */ } while(0)
++
++#  define setnvalue(obj,x) \
++      do { TValue *i_o=(obj); lua_Number xx=(x); \
++           lua_number2integer(i_o->value.i,xx); \
++           if (xx==i_o->value.i) i_o->tt=LUA_TINT; \
++           else { i_o->value.n=xx; i_o->tt=LUA_TNUMBER; } \
++           _SET_N2_(i_o,0); } while(0)
++
++#  ifdef LUA_NUMBER_MODE_COMPLEX
++#   define setnvalue2(obj,x,y) \
++      do { TValue *i_o=(obj); lua_Number xx=(x); lua_Number yy=(y); \
++           if (yy==0) setnvalue(obj,xx); /* may use .i */ \
++           else { i_o->value.n=xx; i_o->value.img.n=yy; i_o->tt=LUA_TNUMBER; } \
++         } while(0)
++#  endif
++# endif
++
++  /* This to be used when we KNOW that a value is not an integer.
++  */
++# define setnvalue_fast(obj,x) \
++    { TValue *i_o=(obj); i_o->value.n=(x); i_o->tt=LUA_TNUMBER; _SET_N2_(i_o,0); }
++      
++#elif defined (LUA_NUMBER_MODE_COMPLEX)
++# error "Use int32 optimization with complex."
++#else
++/* not LUA_TINT (pure FP) */
++# define setnvalue(obj,x) \
++    { TValue *i_o=(obj); i_o->value.n=(x); i_o->tt=LUA_TNUMBER; }
++  
++# define setivalue(obj,x) \
++    setnvalue( (obj), cast(lua_Number, (x)) )
++#endif
+ 
+ #define setpvalue(obj,x) \
+   { TValue *i_o=(obj); i_o->value.p=(x); i_o->tt=LUA_TLIGHTUSERDATA; }
+@@ -155,9 +280,6 @@
+     i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TPROTO; \
+     checkliveness(G(L),i_o); }
+ 
+-
+-
+-
+ #define setobj(L,obj1,obj2) \
+   { const TValue *o2=(obj2); TValue *o1=(obj1); \
+     o1->value = o2->value; o1->tt=o2->tt; \
+@@ -185,8 +307,13 @@
+ 
+ #define setttype(obj, tt) (ttype(obj) = (tt))
+ 
+-
+-#define iscollectable(o)	(ttype(o) >= LUA_TSTRING)
++/* Note: When LUA_TINT is fixed (preferably to LUA_TNUMBER+1), this can be reduced.
++ */
++#if defined(LUA_TINT) && (LUA_TINT >= LUA_TSTRING)
++# define iscollectable(o)	((ttype(o) >= LUA_TSTRING) && (ttype(o) != LUA_TINT))
++#else
++# define iscollectable(o)	(ttype(o) >= LUA_TSTRING)
++#endif
+ 
+ 
+ 
+@@ -370,12 +497,10 @@
+ LUAI_FUNC int luaO_int2fb (unsigned int x);
+ LUAI_FUNC int luaO_fb2int (int x);
+ LUAI_FUNC int luaO_rawequalObj (const TValue *t1, const TValue *t2);
+-LUAI_FUNC int luaO_str2d (const char *s, lua_Number *result);
+ LUAI_FUNC const char *luaO_pushvfstring (lua_State *L, const char *fmt,
+                                                        va_list argp);
+ LUAI_FUNC const char *luaO_pushfstring (lua_State *L, const char *fmt, ...);
+ LUAI_FUNC void luaO_chunkid (char *out, const char *source, size_t len);
+ 
+-
+ #endif
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/loslib.c lua-5.1.1-patched/src/loslib.c
+--- lua-5.1.1/src/loslib.c	2006-04-26 21:19:49.000000000 +0300
++++ lua-5.1.1-patched/src/loslib.c	2006-09-01 18:16:20.000000000 +0300
+@@ -175,15 +175,31 @@
+   }
+   if (t == (time_t)(-1))
+     lua_pushnil(L);
+-  else
+-    lua_pushnumber(L, (lua_Number)t);
++  else {
++     /* On float systems the pushed value must be an integer, NOT a number.
++      * Otherwise, accuracy is lost in the time_t->float conversion.
++      *
++      * Note: there are some known processors, where 'time_t' is i.e. 'double',
++      *       in such cases the (original) way of pushing a number is better
++      *       (and is kept as the default) */
++#if defined(LUA_NUMBER_MODE_FLOAT_INT32) || defined(LUA_NUMBER_MODE_FLOAT_INT64)
++     lua_pushinteger(L, t);
++#else
++      lua_pushnumber(L, (lua_Number)t);
++#endif
++     }
+   return 1;
+ }
+ 
+ 
+ static int os_difftime (lua_State *L) {
++#if defined(LUA_NUMBER_MODE_FLOAT_INT32) || defined(LUA_NUMBER_MODE_FLOAT_INT64)
++  lua_pushinteger(L, difftime((time_t)(luaL_checkinteger(L, 1)),
++                              (time_t)(luaL_optinteger(L, 2, 0))));
++#else
+   lua_pushnumber(L, difftime((time_t)(luaL_checknumber(L, 1)),
+                              (time_t)(luaL_optnumber(L, 2, 0))));
++#endif
+   return 1;
+ }
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/lparser.c lua-5.1.1-patched/src/lparser.c
+--- lua-5.1.1/src/lparser.c	2006-06-05 18:57:59.000000000 +0300
++++ lua-5.1.1-patched/src/lparser.c	2006-10-22 18:40:00.000000000 +0300
+@@ -33,7 +33,6 @@
+ 
+ #define luaY_checklimit(fs,v,l,m)	if ((v)>(l)) errorlimit(fs,l,m)
+ 
+-
+ /*
+ ** nodes for block list (list of active blocks)
+ */
+@@ -70,14 +69,14 @@
+ 
+ static void errorlimit (FuncState *fs, int limit, const char *what) {
+   const char *msg = (fs->f->linedefined == 0) ?
+-    luaO_pushfstring(fs->L, "main function has more than %d %s", limit, what) :
++    luaO_pushfstring(fs->L, "main function has more than %d %s", (LUAI_UACINTEGER)limit, what) :
+     luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
+-                            fs->f->linedefined, limit, what);
++                            (LUAI_UACINTEGER) (fs->f->linedefined), (LUAI_UACINTEGER)limit, what);
+   luaX_lexerror(fs->ls, msg, 0);
+ }
+ 
+ 
+-static int testnext (LexState *ls, int c) {
++static lu_bool testnext (LexState *ls, int c) {
+   if (ls->t.token == c) {
+     luaX_next(ls);
+     return 1;
+@@ -108,7 +107,7 @@
+     else {
+       luaX_syntaxerror(ls, luaO_pushfstring(ls->L,
+              LUA_QS " expected (to close " LUA_QS " at line %d)",
+-              luaX_token2str(ls, what), luaX_token2str(ls, who), where));
++              luaX_token2str(ls, what), luaX_token2str(ls, who), (LUAI_UACINTEGER)where));
+     }
+   }
+ }
+@@ -725,7 +724,7 @@
+ 
+ 
+ static void simpleexp (LexState *ls, expdesc *v) {
+-  /* simpleexp -> NUMBER | STRING | NIL | true | false | ... |
++  /* simpleexp -> NUMBER | INT | STRING | NIL | true | false | ... |
+                   constructor | FUNCTION body | primaryexp */
+   switch (ls->t.token) {
+     case TK_NUMBER: {
+@@ -733,6 +732,26 @@
+       v->u.nval = ls->t.seminfo.r;
+       break;
+     }
++    case TK_INT: {
++    /* BUG: If _this_ is put to "if 0" then 9+1=10 even in float+int64 */
++#ifdef LUA_TINT
++      init_exp(v, VKINT, 0);
++      v->u.ival = ls->t.seminfo.i;
++#else
++    /* Integers come in the bytecode, but get passed into 'lua_Number'
++     * here (for LUA_NUMBER_MODE_DOUBLE) */
++      init_exp(v, VKNUM, 0);
++      v->u.nval = (lua_Number) ls->t.seminfo.i;
++#endif
++      break;
++    }
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    case TK_NUMBER2: {
++      init_exp(v, VKNUM2, 0);
++      v->u.nval = ls->t.seminfo.r;
++      break;
++    }
++#endif
+     case TK_STRING: {
+       codestring(ls, v, ls->t.seminfo.ts);
+       break;
+@@ -868,7 +887,7 @@
+ */
+ 
+ 
+-static int block_follow (int token) {
++static lu_bool block_follow (int token) {
+   switch (token) {
+     case TK_ELSE: case TK_ELSEIF: case TK_END:
+     case TK_UNTIL: case TK_EOS:
+@@ -908,7 +927,7 @@
+ static void check_conflict (LexState *ls, struct LHS_assign *lh, expdesc *v) {
+   FuncState *fs = ls->fs;
+   int extra = fs->freereg;  /* eventual position to save local variable */
+-  int conflict = 0;
++  lu_bool conflict = 0;
+   for (; lh; lh = lh->prev) {
+     if (lh->v.k == VINDEXED) {
+       if (lh->v.u.s.info == v->u.s.info) {  /* conflict? */
+@@ -1077,7 +1096,11 @@
+   if (testnext(ls, ','))
+     exp1(ls);  /* optional step */
+   else {  /* default step = 1 */
++#ifdef LUA_TINT
++    luaK_codeABx(fs, OP_LOADK, fs->freereg, luaK_integerK(fs, 1));
++#else
+     luaK_codeABx(fs, OP_LOADK, fs->freereg, luaK_numberK(fs, 1));
++#endif
+     luaK_reserveregs(fs, 1);
+   }
+   forbody(ls, base, line, 1, 1);
+@@ -1266,7 +1289,7 @@
+ }
+ 
+ 
+-static int statement (LexState *ls) {
++static lu_bool statement (LexState *ls) {
+   int line = ls->linenumber;  /* may be needed for error messages */
+   switch (ls->t.token) {
+     case TK_IF: {  /* stat -> ifstat */
+diff -urN --exclude=.svn lua-5.1.1/src/lparser.h lua-5.1.1-patched/src/lparser.h
+--- lua-5.1.1/src/lparser.h	2006-03-09 20:14:31.000000000 +0200
++++ lua-5.1.1-patched/src/lparser.h	2006-09-01 18:16:20.000000000 +0300
+@@ -32,6 +32,12 @@
+   VNONRELOC,	/* info = result register */
+   VCALL,	/* info = instruction pc */
+   VVARARG	/* info = instruction pc */
++#ifdef LUA_TINT
++  ,VKINT     /* ival = integer value */
++# ifdef LUA_NUMBER_MODE_COMPLEX
++  ,VKNUM2   /* nval = imaginary value */
++# endif
++#endif
+ } expkind;
+ 
+ typedef struct expdesc {
+@@ -39,6 +45,9 @@
+   union {
+     struct { int info, aux; } s;
+     lua_Number nval;
++#ifdef LUA_TINT
++    lua_Integer ival;
++#endif
+   } u;
+   int t;  /* patch list of `exit when true' */
+   int f;  /* patch list of `exit when false' */
+diff -urN --exclude=.svn lua-5.1.1/src/lstrlib.c lua-5.1.1-patched/src/lstrlib.c
+--- lua-5.1.1/src/lstrlib.c	2006-04-26 23:41:19.000000000 +0300
++++ lua-5.1.1-patched/src/lstrlib.c	2006-08-27 01:59:23.000000000 +0300
+@@ -776,12 +776,22 @@
+         }
+         case 'd':  case 'i': {
+           addintlen(form);
++#ifdef LUA_TINT
++          sprintf(buff, form, (LUA_INTFRM_T)luaL_checkinteger(L, arg));
++#else
+           sprintf(buff, form, (LUA_INTFRM_T)luaL_checknumber(L, arg));
++#endif
+           break;
+         }
++/* AK 22-Jul-06 -> Lua authors: 
++   The ouxX case is identical to di case; should they be merged? */
+         case 'o':  case 'u':  case 'x':  case 'X': {
+           addintlen(form);
++#ifdef LUA_TINT
++          sprintf(buff, form, (unsigned LUA_INTFRM_T)luaL_checkinteger(L, arg));
++#else
+           sprintf(buff, form, (unsigned LUA_INTFRM_T)luaL_checknumber(L, arg));
++#endif
+           break;
+         }
+         case 'e':  case 'E': case 'f':
+diff -urN --exclude=.svn lua-5.1.1/src/ltable.c lua-5.1.1-patched/src/ltable.c
+--- lua-5.1.1/src/ltable.c	2006-01-18 13:49:02.000000000 +0200
++++ lua-5.1.1-patched/src/ltable.c	2006-09-01 18:16:20.000000000 +0300
+@@ -33,6 +33,7 @@
+ #include "lobject.h"
+ #include "lstate.h"
+ #include "ltable.h"
++#include "lnum.h"
+ 
+ 
+ /*
+@@ -92,6 +93,18 @@
+ }
+ 
+ 
++/*
++** hash for lua_Integers
++*
++* Note: values are different than 'hashnum()' would have provided. It's okay.
++*/
++#ifdef LUA_TINT
++static Node *hashint (const Table *t, lua_Integer n) {
++  /* 32 bit: value is its own hash, 64 bit: hashed by the lowest 32 bits */
++  return hashmod(t, (unsigned int)n);
++}
++#endif
++
+ 
+ /*
+ ** returns the `main' position of an element in a table (that is, the index
+@@ -100,7 +113,15 @@
+ static Node *mainposition (const Table *t, const TValue *key) {
+   switch (ttype(key)) {
+     case LUA_TNUMBER:
++#ifdef LUA_TINT
++    /* Note: complex numbers are hashed simply by their real part
++     *       -> all pure imaginary (Ni) numbers end up in same hash. */
++      return hashnum(t, nvalue_fast(key));
++    case LUA_TINT:
++      return hashint(t, ivalue(key));
++#else
+       return hashnum(t, nvalue(key));
++#endif
+     case LUA_TSTRING:
+       return hashstr(t, rawtsvalue(key));
+     case LUA_TBOOLEAN:
+@@ -118,13 +139,18 @@
+ ** the array part of the table, -1 otherwise.
+ */
+ static int arrayindex (const TValue *key) {
+-  if (ttisnumber(key)) {
+-    lua_Number n = nvalue(key);
+-    int k;
+-    lua_number2int(k, n);
+-    if (luai_numeq(cast_num(k), n))
+-      return k;
+-  }
++#ifdef LUA_TINT
++  if (ttisinteger(key))
++    return ivalue(key);
++#else
++   if (ttisnumber(key)) {
++     lua_Number n = nvalue(key);
++     int k;
++     lua_number2int(k, n);
++     if (luai_numeq(cast_num(k), n))
++       return k;
++   }
++#endif
+   return -1;  /* `key' did not match some condition */
+ }
+ 
+@@ -159,11 +185,11 @@
+ }
+ 
+ 
+-int luaH_next (lua_State *L, Table *t, StkId key) {
++lu_bool luaH_next (lua_State *L, Table *t, StkId key) {
+   int i = findindex(L, t, key);  /* find original element */
+   for (i++; i < t->sizearray; i++) {  /* try first array part */
+     if (!ttisnil(&t->array[i])) {  /* a non-nil value? */
+-      setnvalue(key, cast_num(i+1));
++      setivalue(key, i+1);
+       setobj2s(L, key+1, &t->array[i]);
+       return 1;
+     }
+@@ -208,7 +234,7 @@
+ }
+ 
+ 
+-static int countint (const TValue *key, int *nums) {
++static lu_bool countint (const TValue *key, int *nums) {
+   int k = arrayindex(key);
+   if (0 < k && k <= MAXASIZE) {  /* is `key' an appropriate array index? */
+     nums[ceillog2(k)]++;  /* count as such */
+@@ -437,6 +463,16 @@
+   if (cast(unsigned int, key-1) < cast(unsigned int, t->sizearray))
+     return &t->array[key-1];
+   else {
++#ifdef LUA_TINT
++    Node *n = hashint(t, key);
++    do {  /* check whether `key' is somewhere in the chain */
++      if (ttisinteger(gkey(n)) && (ivalue(gkey(n)) == key)) {
++        return gval(n);  /* that's it */
++      } else { 
++      n = gnext(n);
++    }
++    } while (n);
++#else
+     lua_Number nk = cast_num(key);
+     Node *n = hashnum(t, nk);
+     do {  /* check whether `key' is somewhere in the chain */
+@@ -444,6 +480,7 @@
+         return gval(n);  /* that's it */
+       else n = gnext(n);
+     } while (n);
++#endif
+     return luaO_nilobject;
+   }
+ }
+@@ -470,6 +507,18 @@
+   switch (ttype(key)) {
+     case LUA_TNIL: return luaO_nilobject;
+     case LUA_TSTRING: return luaH_getstr(t, rawtsvalue(key));
++#ifdef LUA_TINT
++    case LUA_TINT: {
++      /* If index fits in an 'int', use it, otherwise go through 
++       * (same as original LUA_TNUMBER functionality below; we
++       * could also 'fix' lua_getnum() to have a broader parameter?)
++       */
++      int k= (int) ivalue(key);
++      if ( ((lua_Integer)k) == ivalue(key) )  /* no conversion loss (fits in int) */
++        return luaH_getnum(t, k);
++      /* else go through (including LUA_TNUMBER) */
++    }
++#else
+     case LUA_TNUMBER: {
+       int k;
+       lua_Number n = nvalue(key);
+@@ -478,6 +527,7 @@
+         return luaH_getnum(t, k);  /* use specialized version */
+       /* else go through */
+     }
++#endif
+     default: {
+       Node *n = mainposition(t, key);
+       do {  /* check whether `key' is somewhere in the chain */
+@@ -498,7 +548,12 @@
+     return cast(TValue *, p);
+   else {
+     if (ttisnil(key)) luaG_runerror(L, "table index is nil");
++#ifdef LUA_TINT
++    /* Check only LUA_TNUMBER, LUA_TINT never here */
++    else if (ttisnumber_raw(key) && luai_numisnan(nvalue(key)))
++#else
+     else if (ttisnumber(key) && luai_numisnan(nvalue(key)))
++#endif
+       luaG_runerror(L, "table index is NaN");
+     return newkey(L, t, key);
+   }
+@@ -511,7 +566,7 @@
+     return cast(TValue *, p);
+   else {
+     TValue k;
+-    setnvalue(&k, cast_num(key));
++    setivalue(&k, key);
+     return newkey(L, t, &k);
+   }
+ }
+diff -urN --exclude=.svn lua-5.1.1/src/ltm.c lua-5.1.1-patched/src/ltm.c
+--- lua-5.1.1/src/ltm.c	2006-01-10 14:50:00.000000000 +0200
++++ lua-5.1.1-patched/src/ltm.c	2006-08-27 00:13:25.000000000 +0300
+@@ -19,11 +19,10 @@
+ #include "ltm.h"
+ 
+ 
+-
+ const char *const luaT_typenames[] = {
+-  "nil", "boolean", "userdata", "number",
+-  "string", "table", "function", "userdata", "thread",
+-  "proto", "upval"
++    "nil", "boolean", "userdata", "number",
++    "string", "table", "function", "userdata", "thread",
++    "proto", "upval"
+ };
+ 
+ 
+diff -urN --exclude=.svn lua-5.1.1/src/ltm.h lua-5.1.1-patched/src/ltm.h
+--- lua-5.1.1/src/ltm.h	2005-06-06 16:30:25.000000000 +0300
++++ lua-5.1.1-patched/src/ltm.h	2006-08-27 00:13:25.000000000 +0300
+@@ -45,7 +45,6 @@
+ 
+ LUAI_DATA const char *const luaT_typenames[];
+ 
+-
+ LUAI_FUNC const TValue *luaT_gettm (Table *events, TMS event, TString *ename);
+ LUAI_FUNC const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o,
+                                                        TMS event);
+diff -urN --exclude=.svn lua-5.1.1/src/lua.c lua-5.1.1-patched/src/lua.c
+--- lua-5.1.1/src/lua.c	2006-06-02 18:34:00.000000000 +0300
++++ lua-5.1.1-patched/src/lua.c	2006-08-29 16:12:48.000000000 +0300
+@@ -16,7 +16,7 @@
+ 
+ #include "lauxlib.h"
+ #include "lualib.h"
+-
++#include "llimits.h"
+ 
+ 
+ static lua_State *globalL = NULL;
+@@ -158,7 +158,7 @@
+ }
+ 
+ 
+-static int incomplete (lua_State *L, int status) {
++static lu_bool incomplete (lua_State *L, int status) {
+   if (status == LUA_ERRSYNTAX) {
+     size_t lmsg;
+     const char *msg = lua_tolstring(L, -1, &lmsg);
+@@ -172,7 +172,7 @@
+ }
+ 
+ 
+-static int pushline (lua_State *L, int firstline) {
++static lu_bool pushline (lua_State *L, int firstline) {
+   char buffer[LUA_MAXINPUT];
+   char *b = buffer;
+   size_t l;
+@@ -289,7 +289,7 @@
+ }
+ 
+ 
+-static int runargs (lua_State *L, char **argv, int n) {
++static lu_bool runargs (lua_State *L, char **argv, int n) {
+   int i;
+   for (i = 1; i < n; i++) {
+     if (argv[i] == NULL) continue;
+diff -urN --exclude=.svn lua-5.1.1/src/lua.h lua-5.1.1-patched/src/lua.h
+--- lua-5.1.1/src/lua.h	2006-06-02 18:34:00.000000000 +0300
++++ lua-5.1.1-patched/src/lua.h	2006-10-12 23:22:13.000000000 +0300
+@@ -19,7 +19,7 @@
+ #define LUA_VERSION	"Lua 5.1"
+ #define LUA_RELEASE	"Lua 5.1.1"
+ #define LUA_VERSION_NUM	501
+-#define LUA_COPYRIGHT	"Copyright (C) 1994-2006 Lua.org, PUC-Rio"
++#define LUA_COPYRIGHT	"Copyright (C) 1994-2006 Lua.org, PUC-Rio" LUA_NUMBER_MODE
+ #define LUA_AUTHORS 	"R. Ierusalimschy, L. H. de Figueiredo & W. Celes"
+ 
+ 
+@@ -71,6 +71,22 @@
+ */
+ #define LUA_TNONE		(-1)
+ 
++/* LUA_TINT is an internal type, not visible to applications. There are three
++ * potential values where it can be tweaked to (code autoadjusts to these):
++ *
++ * -2:  not 'usual' type value
++ *      BUG: causes problems in non-combo mode with "= 9" command.
++ *
++ * LUA_TNUMBER+1: shifts other type values upwards, breaking binary compatibility
++ *      not acceptable for 5.1, maybe 5.2 onwards?
++ *
++ * 9: greater than existing (5.1) type values. Maybe the best?
++ *      BUG: currently crashes non-combo with "= 9" command.
++*/
++#if !defined(LUA_NUMBER_MODE_DOUBLE) && !defined(LUA_NUMBER_MODE_FLOAT)
++# define LUA_TINT (-2)
++#endif
++
+ #define LUA_TNIL		0
+ #define LUA_TBOOLEAN		1
+ #define LUA_TLIGHTUSERDATA	2
+@@ -82,7 +98,6 @@
+ #define LUA_TTHREAD		8
+ 
+ 
+-
+ /* minimum Lua stack available to a C function */
+ #define LUA_MINSTACK	20
+ 
+@@ -103,6 +118,12 @@
+ typedef LUA_INTEGER lua_Integer;
+ 
+ 
++/* type of complex numbers (requires C99) */
++#ifdef LUA_NUMBER_MODE_COMPLEX
++# include <complex.h>
++ typedef LUA_COMPLEX lua_Complex;
++#endif
++
+ 
+ /*
+ ** state manipulation
+@@ -139,6 +160,8 @@
+ LUA_API int             (lua_type) (lua_State *L, int idx);
+ LUA_API const char     *(lua_typename) (lua_State *L, int tp);
+ 
++LUA_API int             (lua_isinteger) (lua_State *L, int idx);
++
+ LUA_API int            (lua_equal) (lua_State *L, int idx1, int idx2);
+ LUA_API int            (lua_rawequal) (lua_State *L, int idx1, int idx2);
+ LUA_API int            (lua_lessthan) (lua_State *L, int idx1, int idx2);
+@@ -153,6 +176,10 @@
+ LUA_API lua_State      *(lua_tothread) (lua_State *L, int idx);
+ LUA_API const void     *(lua_topointer) (lua_State *L, int idx);
+ 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUA_API lua_Complex    (lua_tocomplex) (lua_State *L, int idx);
++#endif
++
+ 
+ /*
+ ** push functions (C -> stack)
+@@ -170,6 +197,10 @@
+ LUA_API void  (lua_pushlightuserdata) (lua_State *L, void *p);
+ LUA_API int   (lua_pushthread) (lua_State *L);
+ 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++LUA_API void  (lua_pushcomplex) (lua_State *L, lua_Complex v);
++#endif
++
+ 
+ /*
+ ** get functions (Lua -> stack)
+@@ -268,7 +299,19 @@
+ #define lua_isboolean(L,n)	(lua_type(L, (n)) == LUA_TBOOLEAN)
+ #define lua_isthread(L,n)	(lua_type(L, (n)) == LUA_TTHREAD)
+ #define lua_isnone(L,n)		(lua_type(L, (n)) == LUA_TNONE)
+-#define lua_isnoneornil(L, n)	(lua_type(L, (n)) <= 0)
++
++/* Note: If 'LUA_TINT' is defined as 'LNUMBER+1', this part can be removed.
++*/
++#if (defined LUA_TINT) && (LUA_TINT < 0)
++# ifdef INLINE
++    INLINE int lua_isnoneornil( lua_State* L, int n)
++      { int t= lua_type(L,n); return (t==LUA_TNONE) || (t==LUA_TNIL); }
++# else
++    #define lua_isnoneornil(L, n)	((lua_type(L,(n))==LUA_TNONE) || (lua_type(L,(n))==LUA_TNIL))
++# endif
++#else
++# define lua_isnoneornil(L, n)	(lua_type(L, (n)) <= 0)   /*original*/
++#endif
+ 
+ #define lua_pushliteral(L, s)	\
+ 	lua_pushlstring(L, "" s, (sizeof(s)/sizeof(char))-1)
+@@ -383,3 +426,12 @@
+ 
+ 
+ #endif
++
++/* remove when done! */
++/*
++#define DEBUG()   fprintf( stderr, "<<%s: %d>>\n", __FILE__, __LINE__ )
++#include <stdio.h>
++
++#define lua_assert assert
++#include <assert.h>
++*/
+Binary files lua-5.1.1/src/luac.out and lua-5.1.1-patched/src/luac.out differ
+diff -urN --exclude=.svn lua-5.1.1/src/luaconf.h lua-5.1.1-patched/src/luaconf.h
+--- lua-5.1.1/src/luaconf.h	2006-04-10 21:27:23.000000000 +0300
++++ lua-5.1.1-patched/src/luaconf.h	2006-09-04 02:21:31.000000000 +0300
+@@ -47,7 +47,7 @@
+ 
+ 
+ /*
+-@@ LUA_USE_POSIX includes all functionallity listed as X/Open System
++@@ LUA_USE_POSIX includes all functionality listed as X/Open System
+ @* Interfaces Extension (XSI).
+ ** CHANGE it (define it) if your system is XSI compatible.
+ */
+@@ -136,12 +136,39 @@
+ 
+ 
+ /*
+-@@ LUA_INTEGER is the integral type used by lua_pushinteger/lua_tointeger.
+-** CHANGE that if ptrdiff_t is not adequate on your machine. (On most
+-** machines, ptrdiff_t gives a good choice between int or long.)
+-*/
+-#define LUA_INTEGER	ptrdiff_t
++@@ LUA_NUMBER_MODE_xxx defines the number mode used by Lua; #define ONE of these:
++**
++** LUA_NUMBER_MODE_DOUBLE (default) double precision for both FP and integers (32-bit)
++** LUA_NUMBER_MODE_DOUBLE_INT32     double precision FP, 32-bit integers (if no FPU)
++** LUA_NUMBER_MODE_DOUBLE_INT64     double precision FP, 64-bit integers
++** LUA_NUMBER_MODE_FLOAT            single precision for both FP and integers (23-bit only!)
++** LUA_NUMBER_MODE_FLOAT_INT32      single precision FP, 32-bit integers
++** LUA_NUMBER_MODE_FLOAT_INT64      single precision FP, 64-bit integers
++** LUA_NUMBER_MODE_BCD_INT32        Binary Coded Decimals, 32-bit integer optimized
++** LUA_NUMBER_MODE_COMPLEX          Complex (a+bi) number mode, both double.
++**
++** BCD (not yet implemented!) offers lossless computations regardless the number range,
++** with a speed penalty. 32-bit integer operations go native speed, though.
++**
++** Recommendations:
++**  - x86 and PowerPC desktops: LUA_NUMBER_MODE_DOUBLE or LUA_NUMBER_MODE_DOUBLE_INT64
++**  - Embedded without an FPU: LUA_NUMBER_MODE_xx_INT32
++**
++** Limitations:
++**  - Precompiled bytecodes cannot be read into a Lua core with a different number format.
++*/
++#if !defined(LUA_NUMBER_MODE_DOUBLE) && \
++    !defined(LUA_NUMBER_MODE_DOUBLE_INT32) && \
++    !defined(LUA_NUMBER_MODE_DOUBLE_INT64) && \
++    !defined(LUA_NUMBER_MODE_FLOAT) && \
++    !defined(LUA_NUMBER_MODE_FLOAT_INT32) && \
++    !defined(LUA_NUMBER_MODE_FLOAT_INT64) && \
++    !defined(LUA_NUMBER_MODE_BCD_INT32) && \
++    !defined(LUA_NUMBER_MODE_COMPLEX)
++# define LUA_NUMBER_MODE_DOUBLE
++#endif
+ 
++#include "lnum_config.h"
+ 
+ /*
+ @@ LUA_API is a mark for all core API functions.
+@@ -425,6 +452,11 @@
+ #define LUAI_MEM	long
+ #endif
+ 
++/*
++@@ LUAI_BOOL carries 0 and nonzero (normally 1). It may be defined as
++** 'char' (to save memory) or 'int' (for speed)
++*/
++#define LUAI_BOOL int
+ 
+ /*
+ @@ LUAI_MAXCALLS limits the number of nested calls.
+@@ -489,101 +521,6 @@
+ /* }================================================================== */
+ 
+ 
+-
+-
+-/*
+-** {==================================================================
+-@@ LUA_NUMBER is the type of numbers in Lua.
+-** CHANGE the following definitions only if you want to build Lua
+-** with a number type different from double. You may also need to
+-** change lua_number2int & lua_number2integer.
+-** ===================================================================
+-*/
+-
+-#define LUA_NUMBER_DOUBLE
+-#define LUA_NUMBER	double
+-
+-/*
+-@@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
+-@* over a number.
+-*/
+-#define LUAI_UACNUMBER	double
+-
+-
+-/*
+-@@ LUA_NUMBER_SCAN is the format for reading numbers.
+-@@ LUA_NUMBER_FMT is the format for writing numbers.
+-@@ lua_number2str converts a number to a string.
+-@@ LUAI_MAXNUMBER2STR is maximum size of previous conversion.
+-@@ lua_str2number converts a string to a number.
+-*/
+-#define LUA_NUMBER_SCAN		"%lf"
+-#define LUA_NUMBER_FMT		"%.14g"
+-#define lua_number2str(s,n)	sprintf((s), LUA_NUMBER_FMT, (n))
+-#define LUAI_MAXNUMBER2STR	32 /* 16 digits, sign, point, and \0 */
+-#define lua_str2number(s,p)	strtod((s), (p))
+-
+-
+-/*
+-@@ The luai_num* macros define the primitive operations over numbers.
+-*/
+-#if defined(LUA_CORE)
+-#include <math.h>
+-#define luai_numadd(a,b)	((a)+(b))
+-#define luai_numsub(a,b)	((a)-(b))
+-#define luai_nummul(a,b)	((a)*(b))
+-#define luai_numdiv(a,b)	((a)/(b))
+-#define luai_nummod(a,b)	((a) - floor((a)/(b))*(b))
+-#define luai_numpow(a,b)	(pow(a,b))
+-#define luai_numunm(a)		(-(a))
+-#define luai_numeq(a,b)		((a)==(b))
+-#define luai_numlt(a,b)		((a)<(b))
+-#define luai_numle(a,b)		((a)<=(b))
+-#define luai_numisnan(a)	(!luai_numeq((a), (a)))
+-#endif
+-
+-
+-/*
+-@@ lua_number2int is a macro to convert lua_Number to int.
+-@@ lua_number2integer is a macro to convert lua_Number to lua_Integer.
+-** CHANGE them if you know a faster way to convert a lua_Number to
+-** int (with any rounding method and without throwing errors) in your
+-** system. In Pentium machines, a naive typecast from double to int
+-** in C is extremely slow, so any alternative is worth trying.
+-*/
+-
+-/* On a Pentium, resort to a trick */
+-#if defined(LUA_NUMBER_DOUBLE) && !defined(LUA_ANSI) && !defined(__SSE2__) && \
+-    (defined(__i386) || defined (_M_IX86) || defined(__i386__))
+-
+-/* On a Microsoft compiler, use assembler */
+-#if defined(_MSC_VER)
+-
+-#define lua_number2int(i,d)   __asm fld d   __asm fistp i
+-#define lua_number2integer(i,n)		lua_number2int(i, n)
+-
+-/* the next trick should work on any Pentium, but sometimes clashes
+-   with a DirectX idiosyncrasy */
+-#else
+-
+-union luai_Cast { double l_d; long l_l; };
+-#define lua_number2int(i,d) \
+-  { volatile union luai_Cast u; u.l_d = (d) + 6755399441055744.0; (i) = u.l_l; }
+-#define lua_number2integer(i,n)		lua_number2int(i, n)
+-
+-#endif
+-
+-
+-/* this option always works, but may be slow */
+-#else
+-#define lua_number2int(i,d)	((i)=(int)(d))
+-#define lua_number2integer(i,d)	((i)=(lua_Integer)(d))
+-
+-#endif
+-
+-/* }================================================================== */
+-
+-
+ /*
+ @@ LUAI_USER_ALIGNMENT_T is a type that requires maximum alignment.
+ ** CHANGE it if your system requires alignments larger than double. (For
+@@ -727,28 +664,6 @@
+ #define luai_userstateyield(L,n)	((void)L)
+ 
+ 
+-/*
+-@@ LUA_INTFRMLEN is the length modifier for integer conversions
+-@* in 'string.format'.
+-@@ LUA_INTFRM_T is the integer type correspoding to the previous length
+-@* modifier.
+-** CHANGE them if your system supports long long or does not support long.
+-*/
+-
+-#if defined(LUA_USELONGLONG)
+-
+-#define LUA_INTFRMLEN		"ll"
+-#define LUA_INTFRM_T		long long
+-
+-#else
+-
+-#define LUA_INTFRMLEN		"l"
+-#define LUA_INTFRM_T		long
+-
+-#endif
+-
+-
+-
+ /* =================================================================== */
+ 
+ /*
+diff -urN --exclude=.svn lua-5.1.1/src/lundump.c lua-5.1.1-patched/src/lundump.c
+--- lua-5.1.1/src/lundump.c	2006-02-16 17:53:49.000000000 +0200
++++ lua-5.1.1-patched/src/lundump.c	2006-09-01 18:16:20.000000000 +0300
+@@ -72,6 +72,15 @@
+  return x;
+ }
+ 
++#ifdef LUA_TINT
++static lua_Integer LoadInteger(LoadState* S)
++{
++ lua_Integer x;
++ LoadVar(S,x);
++ return x;
++}
++#endif
++
+ static TString* LoadString(LoadState* S)
+ {
+  size_t size;
+@@ -118,6 +127,11 @@
+    case LUA_TNUMBER:
+ 	setnvalue(o,LoadNumber(S));
+ 	break;
++#ifdef LUA_TINT
++   case LUA_TINT:   /* Integer type saved in bytecode (see lcode.c) */
++	setivalue(o,LoadInteger(S));
++	break;
++#endif
+    case LUA_TSTRING:
+ 	setsvalue2n(S->L,o,LoadString(S));
+ 	break;
+@@ -210,6 +224,7 @@
+ void luaU_header (char* h)
+ {
+  int x=1;
++ char id;
+  memcpy(h,LUA_SIGNATURE,sizeof(LUA_SIGNATURE)-1);
+  h+=sizeof(LUA_SIGNATURE)-1;
+  *h++=(char)LUAC_VERSION;
+@@ -219,5 +234,35 @@
+  *h++=(char)sizeof(size_t);
+  *h++=(char)sizeof(Instruction);
+  *h++=(char)sizeof(lua_Number);
+- *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
++
++ id= (char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
++
++ /* Storing number type in header needs to be rethinked in next Lua version,
++  * should provide means to check:
++  *     - integer size matches
++  *     - number size matches
++  *     - (Complex/BCD requirements?) 
++  *
++  * 0: lua_Number is float or double, lua_Integer not used. (used by 5.1 nonpatched)
++  * 1: lua_Number is integer (used by 5.1 nonpatched)
++  *
++  * +4: using INT32 (sizeof(lua_Integer))
++  * +8: using INT64 (sizeof(lua_Integer))
++  *
++  * +0x10: using COMPLEX numbers (double,double)
++  * +0x20: using BCD number base
++  * +0x30: 
++  * +0xf0: ... other excluding special modes (1..15)
++  */
++#ifdef LUA_TINT
++ id |= (char) sizeof(lua_Integer);
++#endif
++#ifdef LUA_NUMBER_MODE_COMPLEX
++ id |= 0x10;
++#elif defined(LUA_NUMBER_MODE_BCD)
++ id |= 0x20;
++#endif
++ *h++= id;
+ }
++
++
+diff -urN --exclude=.svn lua-5.1.1/src/lvm.c lua-5.1.1-patched/src/lvm.c
+--- lua-5.1.1/src/lvm.c	2006-06-05 18:58:59.000000000 +0300
++++ lua-5.1.1-patched/src/lvm.c	2006-09-11 01:07:31.000000000 +0300
+@@ -25,8 +25,8 @@
+ #include "ltable.h"
+ #include "ltm.h"
+ #include "lvm.h"
+-
+-
++#include "llex.h"
++#include "lnum.h"
+ 
+ /* limit for table tag-method chains (to avoid loops) */
+ #define MAXTAGLOOP	100
+@@ -34,26 +34,40 @@
+ 
+ const TValue *luaV_tonumber (const TValue *obj, TValue *n) {
+   lua_Number num;
++  lua_Integer i;
+   if (ttisnumber(obj)) return obj;
+-  if (ttisstring(obj) && luaO_str2d(svalue(obj), &num)) {
+-    setnvalue(n, num);
+-    return n;
+-  }
+-  else
+-    return NULL;
++
++  if (ttisstring(obj)) {
++    /* converts integers without accuracy loss, if possible. */
++    switch( luaO_str2d( svalue(obj), &num, &i ) ) {
++        case TK_INT:
++#ifdef LUA_TINT
++            setivalue(n,i);
++#else
++            setnvalue(n, (lua_Number)i);
++#endif
++            return n;
++        case TK_NUMBER:
++            /* Now, DO NOT use 'setnvalue_fast()' here, since the number might be
++             * i.e. "1.0", which needs to be stored as an integer. */
++            setnvalue(n,num);
++            return n;
++#ifdef LUA_NUMBER_MODE_COMPLEX
++        case TK_NUMBER2:
++            setnvalue2(n,0,num);    /* tonumber("2i") will give a complex number */
++            break;
++#endif
++        }
++    }
++  return NULL;
+ }
+ 
+ 
+-int luaV_tostring (lua_State *L, StkId obj) {
+-  if (!ttisnumber(obj))
+-    return 0;
+-  else {
+-    char s[LUAI_MAXNUMBER2STR];
+-    lua_Number n = nvalue(obj);
+-    lua_number2str(s, n);
+-    setsvalue2s(L, obj, luaS_new(L, s));
+-    return 1;
+-  }
++lu_bool luaV_tostring (lua_State *L, StkId obj) {
++  char s[LUAI_MAXNUMBER2STR];
++  if (!luaO_num2buf(s,obj)) return 0;
++  setsvalue2s(L, obj, luaS_new(L, s));
++  return 1;
+ }
+ 
+ 
+@@ -160,7 +174,7 @@
+ }
+ 
+ 
+-static int call_binTM (lua_State *L, const TValue *p1, const TValue *p2,
++static lu_bool call_binTM (lua_State *L, const TValue *p1, const TValue *p2,
+                        StkId res, TMS event) {
+   const TValue *tm = luaT_gettmbyobj(L, p1, event);  /* try first operand */
+   if (ttisnil(tm))
+@@ -220,24 +234,86 @@
+ }
+ 
+ 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++void error_complex( lua_State *L, const TValue *l, const TValue *r )
++{
++  char buf1[ LUAI_MAXNUMBER2STR ];
++  char buf2[ LUAI_MAXNUMBER2STR ];
++  luaO_num2buf( buf1, l );
++  luaO_num2buf( buf2, r );
++  luaG_runerror( L, "unable to compare: %s with %s", buf1, buf2 );
++  /* no return */
++}
++#endif
++
++
+ int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r) {
+   int res;
+-  if (ttype(l) != ttype(r))
++#ifdef LUA_TINT
++  int tl,tr;
++#endif
++  if (ttype2(l) != ttype2(r))
+     return luaG_ordererror(L, l, r);
++#ifdef LUA_TINT
++# ifdef LUA_NUMBER_MODE_COMPLEX
++  if ( (nvalue2(l)!=0) || (nvalue2(r)!=0) )
++    error_complex( L, l, r );
++# endif
++  tl= ttype(l), tr= ttype(r);
++  if (tl==tr) {  /* clear arithmetics */
++    switch(tl) {
++      case LUA_TINT:      return ivalue(l) < ivalue(r);
++      case LUA_TNUMBER:   return luai_numlt(nvalue_fast(l), nvalue_fast(r));
++      case LUA_TSTRING:   return l_strcmp(rawtsvalue(l), rawtsvalue(r)) < 0;
++    }
++  } else if (tl==LUA_TINT) {  /* l:int, r:num */
++      return luai_numlt( cast_num(ivalue(l)), nvalue_fast(r) );
++  } else if (tl==LUA_TNUMBER) {  /* l:num, r:int */
++      return luai_numlt( nvalue_fast(l), cast_num(ivalue(r)) );
++  }
++  if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
++    return res;
++#else
+   else if (ttisnumber(l))
+     return luai_numlt(nvalue(l), nvalue(r));
+   else if (ttisstring(l))
+     return l_strcmp(rawtsvalue(l), rawtsvalue(r)) < 0;
+   else if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
+     return res;
++#endif
+   return luaG_ordererror(L, l, r);
+ }
+ 
+ 
+ static int lessequal (lua_State *L, const TValue *l, const TValue *r) {
+   int res;
+-  if (ttype(l) != ttype(r))
++#ifdef LUA_TINT
++  int tl, tr;
++#endif
++  if (ttype2(l) != ttype2(r))
+     return luaG_ordererror(L, l, r);
++#ifdef LUA_TINT
++# ifdef LUA_NUMBER_MODE_COMPLEX
++  if ( (nvalue2(l)!=0) || (nvalue2(r)!=0) )
++    error_complex( L, l, r );
++# endif
++  tl= ttype(l), tr= ttype(r);
++  if (tl==tr) {  /* clear arithmetics */
++    switch(tl) {
++      case LUA_TINT:      return ivalue(l) <= ivalue(r);
++      case LUA_TNUMBER:   return luai_numle(nvalue_fast(l), nvalue_fast(r));
++      case LUA_TSTRING:   return l_strcmp(rawtsvalue(l), rawtsvalue(r)) <= 0;
++    }
++  } else if (tl==LUA_TINT) {  /* l:int, r:num */
++      return luai_numle( cast_num(ivalue(l)), nvalue_fast(r) );
++  } else if (tl==LUA_TNUMBER) {  /* l:num, r:int */
++      return luai_numle( nvalue_fast(l), cast_num(ivalue(r)) );
++  }
++  if ((res = call_orderTM(L, l, r, TM_LE)) != -1)  /* first try `le' */
++    return res;
++  else if ((res = call_orderTM(L, r, l, TM_LT)) != -1)  /* else try `lt' */
++    return !res;
++#else
+   else if (ttisnumber(l))
+     return luai_numle(nvalue(l), nvalue(r));
+   else if (ttisstring(l))
+@@ -246,16 +322,29 @@
+     return res;
+   else if ((res = call_orderTM(L, r, l, TM_LT)) != -1)  /* else try `lt' */
+     return !res;
++#endif
+   return luaG_ordererror(L, l, r);
+ }
+ 
+ 
+-int luaV_equalval (lua_State *L, const TValue *t1, const TValue *t2) {
++lu_bool luaV_equalval (lua_State *L, const TValue *t1, const TValue *t2) {
+   const TValue *tm;
+   lua_assert(ttype(t1) == ttype(t2));
+   switch (ttype(t1)) {
+     case LUA_TNIL: return 1;
+-    case LUA_TNUMBER: return luai_numeq(nvalue(t1), nvalue(t2));
++#ifdef LUA_TINT
++    case LUA_TINT:  /* always non-complex */
++        return (ivalue(t1) == ivalue(t2));
++#endif
++    case LUA_TNUMBER: 
++#ifdef LUA_NUMBER_MODE_COMPLEX
++        if (!luai_numeq(nvalue2_fast(t1), nvalue2_fast(t2))) return 0;
++#endif
++#ifdef LUA_TINT
++        return luai_numeq(nvalue_fast(t1), nvalue_fast(t2));
++#else
++        return luai_numeq(nvalue(t1), nvalue(t2));
++#endif
+     case LUA_TBOOLEAN: return bvalue(t1) == bvalue(t2);  /* true must be 1 !! */
+     case LUA_TLIGHTUSERDATA: return pvalue(t1) == pvalue(t2);
+     case LUA_TUSERDATA: {
+@@ -310,30 +399,6 @@
+ }
+ 
+ 
+-static void Arith (lua_State *L, StkId ra, const TValue *rb,
+-                   const TValue *rc, TMS op) {
+-  TValue tempb, tempc;
+-  const TValue *b, *c;
+-  if ((b = luaV_tonumber(rb, &tempb)) != NULL &&
+-      (c = luaV_tonumber(rc, &tempc)) != NULL) {
+-    lua_Number nb = nvalue(b), nc = nvalue(c);
+-    switch (op) {
+-      case TM_ADD: setnvalue(ra, luai_numadd(nb, nc)); break;
+-      case TM_SUB: setnvalue(ra, luai_numsub(nb, nc)); break;
+-      case TM_MUL: setnvalue(ra, luai_nummul(nb, nc)); break;
+-      case TM_DIV: setnvalue(ra, luai_numdiv(nb, nc)); break;
+-      case TM_MOD: setnvalue(ra, luai_nummod(nb, nc)); break;
+-      case TM_POW: setnvalue(ra, luai_numpow(nb, nc)); break;
+-      case TM_UNM: setnvalue(ra, luai_numunm(nb)); break;
+-      default: lua_assert(0); break;
+-    }
+-  }
+-  else if (!call_binTM(L, rb, rc, ra, op))
+-    luaG_aritherror(L, rb, rc);
+-}
+-
+-
+-
+ /*
+ ** some macros for common tasks in `luaV_execute'
+ */
+@@ -357,17 +422,185 @@
+ #define Protect(x)	{ L->savedpc = pc; {x;}; base = L->base; }
+ 
+ 
+-#define arith_op(op,tm) { \
+-        TValue *rb = RKB(i); \
+-        TValue *rc = RKC(i); \
+-        if (ttisnumber(rb) && ttisnumber(rc)) { \
+-          lua_Number nb = nvalue(rb), nc = nvalue(rc); \
+-          setnvalue(ra, op(nb, nc)); \
+-        } \
+-        else \
+-          Protect(Arith(L, ra, rb, rc, tm)); \
+-      }
++/* Note: if called for unary operations, 'rc'=='rb'.
++ */
++static void Arith (lua_State *L, StkId ra, const TValue *rb,
++                   const TValue *rc, TMS op) {
++  TValue tempb, tempc;
++  const TValue *b, *c;
++  if ((b = luaV_tonumber(rb, &tempb)) != NULL &&
++      (c = luaV_tonumber(rc, &tempc)) != NULL) {
++    lua_Number nb, nc;
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    lua_Number nb2, nc2;
++#endif
++#ifdef LUA_TINT
++    /* Keep integer arithmetics in the integer realm, if possible (for speed,
++     * but also accuracy). 
++     */
++    if (ttisinteger(b) && ttisinteger(c)) {
++      lua_Integer ib = ivalue(b), ic = ivalue(c);
++      lua_Integer *ri = &ra->value.i;
++      ra->tt= LUA_TINT;  /* part of 'setivalue(ra)' */
++      switch (op) {
++        case TM_ADD: if (try_addint( ri, ib, ic)) return; break;
++        case TM_SUB: if (try_subint( ri, ib, ic)) return; break;
++        case TM_MUL: if (try_mulint( ri, ib, ic)) return; break;
++        case TM_DIV: if (try_divint( ri, ib, ic)) return; break;
++        case TM_MOD: if (try_modint( ri, ib, ic)) return; break;
++        case TM_POW: if (try_powint( ri, ib, ic)) return; break;
++        case TM_UNM: if (try_unmint( ri, ib)) return; break;
++        default: lua_assert(0); break;
++      }
++    }
++    /* Fallback to floating point, when leaving range. */
++#endif
++    nb = nvalue(b), nc = nvalue(c);
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    nb2= nvalue2(b), nc2= nvalue2(c);
++#endif
++
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    if ((nb2==0) && (nc2==0))   /* use regular operations (faster, same results) */
++#endif
++    switch (op) {
++      case TM_ADD: setnvalue(ra, luai_numadd(nb, nc)); return;
++      case TM_SUB: setnvalue(ra, luai_numsub(nb, nc)); return;
++      case TM_MUL: setnvalue(ra, luai_nummul(nb, nc)); return;
++      case TM_DIV: setnvalue(ra, luai_numdiv(nb, nc)); return;
++      case TM_MOD: setnvalue(ra, luai_nummod(nb, nc)); return;
++      case TM_POW: setnvalue(ra, luai_numpow(nb, nc)); return;
++      case TM_UNM: setnvalue(ra, luai_numunm(nb)); return;
++      default: lua_assert(0); break;
++    }
++#ifdef LUA_NUMBER_MODE_COMPLEX
++    switch (op) {
++      case TM_ADD: setnvalue2(ra, luai_numadd(nb, nb2), luai_numadd(nc, nc2)); return;
++      case TM_SUB: setnvalue2(ra, luai_numsub(nb, nb2), luai_numsub(nc, nc2)); return;
++      case TM_MUL: { /* (xx'-yy'),(x'y+xy') */
++            lua_Number a,b; luai_vectmul( nb,nb2, nc,nc2, &a, &b );
++            setnvalue2(ra, a, b); return; }
++      case TM_DIV: { /* ((x+yi)(x'-y'i)) / (x'x'+y'y') */
++            lua_Number a,b; luai_vectdiv( nb,nb2, nc,nc2, &a, &b );
++            setnvalue2(ra, a, b); return; }
++      case TM_MOD: {
++            lua_Number a,b; luai_vectmod( nb,nb2, nc,nc2, &a, &b );
++            setnvalue2(ra, a, b); return; }
++      case TM_POW: {
++            lua_Number a,b; luai_vectpow( nb,nb2, nc,nc2, &a,&b );
++            setnvalue2(ra, a, b); return; }
++      case TM_UNM: {
++            lua_Number a,b; luai_vectunm( nb,nb2, &a,&b );
++            setnvalue2(ra, a, b); return; }
++      default: lua_assert(0); break;
++    }
++#endif
++  }
++  if (!call_binTM(L, rb, rc, ra, op))
++    luaG_aritherror(L, rb, rc);
++}
+ 
++/* Helper macro to sort arithmetic operations into four categories:
++ *  TK_INT: integer - integer operands
++ *  TK_NUMBER: number - number (non complex, either may be integer)
++ *  TK_NUMBER2: complex numbers (at least the other)
++ *  0: non-numeric (at least the other)
++*/
++#ifdef LUA_TINT
++# ifdef LUA_NUMBER_MODE_COMPLEX
++#  define arith_mode(rb,rc) \
++    ( ttisinteger(rb) && ttisinteger(rc) ? TK_INT : \
++      (ttisnumber(rb) && ttisnumber(rc) ? \
++            (ttiscomplex(rb) || ttiscomplex(rc) ? TK_NUMBER2 : TK_NUMBER) : 0) )
++# else
++#  define arith_mode(rb,rc) \
++    ( (ttisinteger(rb) && ttisinteger(rc)) ? TK_INT : \
++      (ttisnumber(rb) && ttisnumber(rc)) ? TK_NUMBER : 0 )
++# endif
++#else
++# define arith_mode(rb,rc) \
++    (ttisnumber(rb) && ttisnumber(rc) ? TK_NUMBER : 0)
++#endif
++
++/* arith_op macro for two operators:
++ * automatically chooses, which function (number, integer, complex) to use
++ */
++#ifdef LUA_TINT
++# define ARITH_OP2_START( op_num, op_int ) \
++  lu_bool failed= 0; \
++  switch( arith_mode(rb,rc) ) { \
++    case TK_INT: \
++      if (op_int ( &(ra)->value.i, ivalue(rb), ivalue(rc) )) \
++        { ra->tt= LUA_TINT; break; } \
++      /* flow through */ \
++    case TK_NUMBER: \
++      setnvalue(ra, op_num ( nvalue(rb), nvalue(rc) )); break; \
++    default: \
++      failed= 1; break;
++    /* intentionally left open */
++# define ARITH_OP2_END   } if (!failed) continue;
++
++# ifndef LUA_NUMBER_MODE_COMPLEX
++/* --- Integer optimized --- */
++#  define arith_op_continue( op_num, op_int, _ ) \
++    ARITH_OP2_START( op_num, op_int ) \
++    ARITH_OP2_END
++# else
++/* --- Complex numbers --- */
++#  define arith_op_continue( op_num, op_int, op_complex ) \
++    ARITH_OP2_START( op_num, op_int ) \
++      case TK_NUMBER2: \
++        op_complex( nvalue(rb), nvalue2(rb), nvalue(rc), nvalue2(rc), \
++                    &ra->value.n, &ra->value.img.n ); \
++        ra->tt= LUA_TNUMBER; break; \
++    ARITH_OP2_END
++# endif
++#else
++/* --- Real numbers (double) --- */
++# define arith_op_continue( op_num, _, __ ) \
++    if (arith_mode(rb,rc)==TK_NUMBER) \
++        { setnvalue(ra, op_num ( nvalue(rb), nvalue(rc) )); \
++          continue; }
++#endif
++
++/* arith_op macro for one operator:
++ */
++#ifdef LUA_TINT
++# define ARITH_OP1_START( op_num, op_int ) \
++  lu_bool failed= 0; \
++  switch( arith_mode(rb,rb) ) { \
++    case TK_INT: \
++      if (op_int ( &(ra)->value.i, ivalue(rb) )) \
++        { ra->tt= LUA_TINT; break; } \
++      /* flow through */ \
++      case TK_NUMBER: \
++        setnvalue(ra, op_num (nvalue(rb))); break; \
++      default: \
++        failed= 1; break;
++        /* intentionally left open */
++# define ARITH_OP1_END } if (!failed) continue;
++
++# ifndef LUA_NUMBER_MODE_COMPLEX
++/* --- Integer optimized --- */
++#  define arith_op1_continue( op_num, op_int, _ ) \
++    ARITH_OP1_START( op_num, op_int ) \
++    ARITH_OP1_END
++# else
++/* --- Complex numbers --- */
++#  define arith_op1_continue( op_num, op_int, op_complex ) \
++    ARITH_OP1_START( op_num, op_int ) \
++      case TK_NUMBER2: \
++        op_complex ( nvalue(rb), nvalue2(rb), &ra->value.n, &ra->value.img.n ); \
++        ra->tt= LUA_TNUMBER; break; \
++    ARITH_OP1_END
++# endif
++#else
++/* --- Real numbers (double) --- */
++# define arith_op1_continue( op_num, _, __ ) \
++    if (ttisnumber(rb)) \
++        { setnvalue(ra, op_num ( nvalue(rb) )); \
++          continue; }
++#endif
+ 
+ 
+ void luaV_execute (lua_State *L, int nexeccalls) {
+@@ -468,38 +701,45 @@
+         continue;
+       }
+       case OP_ADD: {
+-        arith_op(luai_numadd, TM_ADD);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue( luai_numadd, try_addint, luai_vectadd );
++        Protect(Arith(L, ra, rb, rc, TM_ADD)); \
+         continue;
+       }
+       case OP_SUB: {
+-        arith_op(luai_numsub, TM_SUB);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue( luai_numsub, try_subint, luai_vectsub );
++        Protect(Arith(L, ra, rb, rc, TM_SUB));
+         continue;
+       }
+       case OP_MUL: {
+-        arith_op(luai_nummul, TM_MUL);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue(luai_nummul, try_mulint, luai_vectmul);
++        Protect(Arith(L, ra, rb, rc, TM_MUL));
+         continue;
+       }
+       case OP_DIV: {
+-        arith_op(luai_numdiv, TM_DIV);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue(luai_numdiv, try_divint, luai_vectdiv);
++        Protect(Arith(L, ra, rb, rc, TM_DIV));
+         continue;
+       }
+       case OP_MOD: {
+-        arith_op(luai_nummod, TM_MOD);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue(luai_nummod, try_modint, luai_vectmod);
++        Protect(Arith(L, ra, rb, rc, TM_MOD));
+         continue;
+       }
+       case OP_POW: {
+-        arith_op(luai_numpow, TM_POW);
++        TValue *rb = RKB(i), *rc= RKC(i);
++        arith_op_continue(luai_numpow, try_powint, luai_vectpow);
++        Protect(Arith(L, ra, rb, rc, TM_POW));
+         continue;
+       }
+       case OP_UNM: {
+         TValue *rb = RB(i);
+-        if (ttisnumber(rb)) {
+-          lua_Number nb = nvalue(rb);
+-          setnvalue(ra, luai_numunm(nb));
+-        }
+-        else {
+-          Protect(Arith(L, ra, rb, rb, TM_UNM));
+-        }
++        arith_op1_continue(luai_numunm, try_unmint, luai_vectunm);
++        Protect(Arith(L, ra, rb, rb, TM_UNM));
+         continue;
+       }
+       case OP_NOT: {
+@@ -511,11 +751,11 @@
+         const TValue *rb = RB(i);
+         switch (ttype(rb)) {
+           case LUA_TTABLE: {
+-            setnvalue(ra, cast_num(luaH_getn(hvalue(rb))));
++            setivalue(ra, luaH_getn(hvalue(rb)));
+             break;
+           }
+           case LUA_TSTRING: {
+-            setnvalue(ra, cast_num(tsvalue(rb)->len));
++            setivalue(ra, tsvalue(rb)->len);
+             break;
+           }
+           default: {  /* try metamethod */
+@@ -648,6 +888,29 @@
+         }
+       }
+       case OP_FORLOOP: {
++#ifdef LUA_TINT
++        /* If all start,step and limit are integers, we don't need to 
++         * check against overflow in the looping.
++         * 
++         * Note: Avoid use of "for i=1,math.huge do ..." on non-FPU
++         *       architectures, since "math.huge" causes the slower
++         *       non-integer fallback (use 99999 instead).
++         */
++        if (ttisinteger(ra) && ttisinteger(ra+1) && ttisinteger(ra+2)) {
++          lua_Integer step = ivalue(ra+2);
++          lua_Integer idx = ivalue(ra) + step; /* increment index */
++          lua_Integer limit = ivalue(ra+1);
++          if (step > 0 ? (idx <= limit) : (limit <= idx)) {
++            dojump(L, pc, GETARG_sBx(i));  /* jump back */
++            setivalue(ra, idx);  /* update internal index... */
++            setivalue(ra+3, idx);  /* ...and external index */
++          }
++          continue;
++        } 
++        /* fallback to non-integer looping (don't use 'nvalue_fast', 
++           some values may be integer!) 
++        */
++#endif
+         lua_Number step = nvalue(ra+2);
+         lua_Number idx = luai_numadd(nvalue(ra), step); /* increment index */
+         lua_Number limit = nvalue(ra+1);
+@@ -664,13 +927,26 @@
+         const TValue *plimit = ra+1;
+         const TValue *pstep = ra+2;
+         L->savedpc = pc;  /* next steps may throw errors */
++        /* Using same location for tonumber's both arguments, effectively does
++         * in-place modification (string->number). */
+         if (!tonumber(init, ra))
+           luaG_runerror(L, LUA_QL("for") " initial value must be a number");
+         else if (!tonumber(plimit, ra+1))
+           luaG_runerror(L, LUA_QL("for") " limit must be a number");
+         else if (!tonumber(pstep, ra+2))
+           luaG_runerror(L, LUA_QL("for") " step must be a number");
++#ifdef LUA_TINT
++        /* Step back one value (must make sure also that is safely within range)
++         */
++        if ( ttisinteger(ra) && ttisinteger(pstep) &&
++              try_subint( &ra->value.i, ivalue(ra), ivalue(pstep) ) )  { /*done*/ }
++        else { 
++            /* don't use 'nvalue_fast()', the values may be integer */
++            setnvalue(ra, luai_numsub(nvalue(ra), nvalue(pstep)));
++        }
++#else
+         setnvalue(ra, luai_numsub(nvalue(ra), nvalue(pstep)));
++#endif
+         dojump(L, pc, GETARG_sBx(i));
+         continue;
+       }
+diff -urN --exclude=.svn lua-5.1.1/src/lvm.h lua-5.1.1-patched/src/lvm.h
+--- lua-5.1.1/src/lvm.h	2005-08-22 21:54:49.000000000 +0300
++++ lua-5.1.1-patched/src/lvm.h	2006-09-01 18:16:20.000000000 +0300
+@@ -15,8 +15,10 @@
+ 
+ #define tostring(L,o) ((ttype(o) == LUA_TSTRING) || (luaV_tostring(L, o)))
+ 
+-#define tonumber(o,n)	(ttype(o) == LUA_TNUMBER || \
+-                         (((o) = luaV_tonumber(o,n)) != NULL))
++/* Note: do NOT use 'n' outside of this macro; 'o' is updated if necessary
++ *       to point to it. 'n' might not get touched, at all!
++ */
++#define tonumber(o,n) (ttisnumber(o) || (((o) = luaV_tonumber(o,n)) != NULL))
+ 
+ #define equalobj(L,o1,o2) \
+ 	(ttype(o1) == ttype(o2) && luaV_equalval(L, o1, o2))
+diff -urN --exclude=.svn lua-5.1.1/src/print.c lua-5.1.1-patched/src/print.c
+--- lua-5.1.1/src/print.c	2006-05-31 16:30:05.000000000 +0300
++++ lua-5.1.1-patched/src/print.c	2006-09-02 00:38:43.000000000 +0300
+@@ -14,6 +14,7 @@
+ #include "lobject.h"
+ #include "lopcodes.h"
+ #include "lundump.h"
++#include "lnum.h"
+ 
+ #define PrintFunction	luaU_print
+ 
+@@ -59,8 +60,12 @@
+   case LUA_TBOOLEAN:
+ 	printf(bvalue(o) ? "true" : "false");
+ 	break;
+-  case LUA_TNUMBER:
+-	printf(LUA_NUMBER_FMT,nvalue(o));
++#ifdef LUA_TINT
++  case LUA_TINT:
++#endif
++  case LUA_TNUMBER: {
++    char s[LUAI_MAXNUMBER2STR];
++    luaO_num2buf(s,o); puts(s); }
+ 	break;
+   case LUA_TSTRING:
+ 	PrintString(rawtsvalue(o));

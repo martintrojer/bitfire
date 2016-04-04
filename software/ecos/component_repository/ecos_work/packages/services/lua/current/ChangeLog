@@ -1,0 +1,26 @@
+2004-03-24 Savin Zlobec <savin@elatec.si>
+
+        * cdl/lua.cdl: Fixed typo.
+        * include/lua-ecos.h: Mapped lua_assert to CYG_ASSERTC.
+        * include/lua.h:
+        * src/ldo.c:
+        * src/lgc.c:
+        * src/lgc.h:
+        * src/lparser.c:
+        * src/lvm.c:
+        * src/lib/lbaselib.c:
+        * src/lib/liolib.c: Synced with Lua version 5.0.2.
+
+2003-07-21 Savin Zlobec <savin@elatec.si>
+
+        * cdl/lua.cdl:
+        * include/lua-ecos.h:
+        * src/lstate.h:
+        * src/lstate.c:
+        * src/lua-ecos.c:
+        * src/lib/lthreadlib.c:
+        Added LuaThreads port
+
+2003-07-14 Savin Zlobec <savin@elatec.si>
+
+        * cdl/lua.cdl: Initial Lua 5.0 port

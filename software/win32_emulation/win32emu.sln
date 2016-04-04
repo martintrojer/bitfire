@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32emu", "win32emu.vcproj", "{9FA6A5FA-AD3C-409A-B800-933C8152B6CE}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{9FA6A5FA-AD3C-409A-B800-933C8152B6CE}.Debug.ActiveCfg = Debug|Win32
+		{9FA6A5FA-AD3C-409A-B800-933C8152B6CE}.Debug.Build.0 = Debug|Win32
+		{9FA6A5FA-AD3C-409A-B800-933C8152B6CE}.Release.ActiveCfg = Release|Win32
+		{9FA6A5FA-AD3C-409A-B800-933C8152B6CE}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
